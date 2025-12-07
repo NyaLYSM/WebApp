@@ -39,4 +39,3 @@ export async function addWardrobeItem(user_id, item_name, item_type, photo_url, 
   }
   return await res.json();
 }
-
