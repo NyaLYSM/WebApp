@@ -1,4 +1,4 @@
-// js/waves.js
+// js/waves.js (slower)
 import { getSavedTheme } from "./theme.js";
 
 const canvas = document.getElementById("bgCanvas");
@@ -16,26 +16,21 @@ function resize(){
   canvas.style.width = window.innerWidth + "px";
   canvas.style.height = window.innerHeight + "px";
 }
-window.addEventListener("resize", ()=>{
-  resize();
-});
+window.addEventListener("resize", ()=> resize());
 
 function rand(min,max){ return Math.random()*(max-min)+min; }
 
 class Wave {
   constructor(options={}){
-    this.amp = options.amp || rand(40,120);
-    this.length = options.length || rand(0.0025,0.006);
-    this.speed = options.speed || rand(0.0008, 0.002);
+    this.amp = options.amp || rand(30,80);                // <- уменьшена амплитуда
+    this.length = options.length || rand(0.001,0.004);    // <- чуть длиннее волны
+    this.speed = options.speed || rand(0.00025, 0.0007);  // <- значительно медленнее
     this.phase = options.phase || rand(0,Math.PI*2);
-    this.offsetX = options.offsetX || rand(-0.5,0.5) * w;
     this.colorA = options.colorA;
     this.colorB = options.colorB;
-    this.widthFactor = options.widthFactor || rand(0.8,1.1);
   }
   render(t){
     ctx.save();
-    ctx.translate(0,0);
     ctx.globalCompositeOperation = "lighter";
     const grad = ctx.createLinearGradient(0,0,w,0);
     grad.addColorStop(0, this.colorA);
@@ -43,18 +38,17 @@ class Wave {
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(0, h);
-    ctx.lineTo(0, h/2);
+    ctx.lineTo(0, h*0.55);
     const segs = 80;
     for(let i=0;i<=segs;i++){
       const x = (i/segs) * w;
-      const px = x / DPR;
       const theta = (t * this.speed) + (x * this.length) + this.phase;
-      const y = Math.sin(theta) * this.amp * (1 + Math.sin(t * 0.0005 + i*0.01)*0.15) + (h/2) + Math.sin(i*0.2 + t*0.0003)*10;
+      const y = Math.sin(theta) * this.amp * (1 + Math.sin(t * 0.0003 + i*0.008)*0.08) + (h*0.5) + Math.sin(i*0.18 + t*0.0002)*6;
       ctx.lineTo(x, y);
     }
     ctx.lineTo(w, h);
     ctx.closePath();
-    ctx.globalAlpha = 0.28;
+    ctx.globalAlpha = 0.22;
     ctx.fill();
     ctx.restore();
   }
@@ -63,20 +57,18 @@ class Wave {
 function initWaves(){
   resize();
   waves = [];
-  // get theme colors from CSS variables if set
   const cs = getComputedStyle(document.documentElement);
   const a = cs.getPropertyValue('--wave-start') || "#6dd3ff";
   const b = cs.getPropertyValue('--wave-end') || "#7b61ff";
 
   for(let i=0;i<4;i++){
     waves.push(new Wave({
-      amp: 60 + i*30,
-      length: 0.003 + i*0.0008,
-      speed: 0.0007 + i*0.0006,
-      phase: i * 1.1,
-      colorA: hexToRgba(a.trim(), 0.9 - i*0.12),
-      colorB: hexToRgba(b.trim(), 0.8 - i*0.1),
-      widthFactor: 0.9 + i*0.1
+      amp: 40 + i*18,
+      length: 0.0025 + i*0.0005,
+      speed: 0.00025 + i*0.0003,
+      phase: i * 1.0,
+      colorA: hexToRgba(a.trim(), 0.95 - i*0.12),
+      colorB: hexToRgba(b.trim(), 0.85 - i*0.08)
     }));
   }
 }
@@ -92,9 +84,7 @@ function hexToRgba(hex, alpha=1){
 
 function loop(t){
   ctx.clearRect(0,0,w,h);
-  for(const wave of waves){
-    wave.render(t);
-  }
+  for(const wave of waves) wave.render(t);
   raf = requestAnimationFrame(loop);
 }
 
@@ -104,7 +94,4 @@ export function startWaves(){
   raf = requestAnimationFrame(loop);
 }
 
-window.addEventListener("load", ()=>{
-  // small delay to allow theme CSS variables to apply
-  setTimeout(()=> startWaves(), 120);
-});
+window.addEventListener("load", ()=> setTimeout(()=> startWaves(), 120));
