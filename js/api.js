@@ -1,5 +1,5 @@
 // js/api.js
-const BACKEND_URL = "<YOUR_BACKEND_URL>"; // <-- Поставь сюда URL вашего backend-а
+const BACKEND_URL = "https://stylist-backend-h5jl.onrender.com"; // <-- Поставь сюда URL вашего backend-а
 
 function buildUrl(path){
   if(!BACKEND_URL || BACKEND_URL.startsWith("<")) throw new Error("BACKEND_URL не задан в js/api.js");
@@ -39,3 +39,4 @@ export async function addWardrobeItem(user_id, item_name, item_type, photo_url, 
   }
   return await res.json();
 }
+
