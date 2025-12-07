@@ -1,6 +1,6 @@
 :root {
-    --radius: 14px;
-    --transition: 0.25s ease;
+    --radius: 16px;
+    --transition: 0.2s ease;
 }
 
 body {
@@ -8,12 +8,12 @@ body {
     padding: 0;
     font-family: 'Inter', sans-serif;
 
-    background: var(--tg-theme-bg-color);
+    background: linear-gradient(180deg, #0f172a, #1e293b);
     color: var(--tg-theme-text-color);
 }
 
 .container {
-    padding: 20px;
+    padding: 18px;
     max-width: 480px;
     margin: auto;
 }
@@ -21,38 +21,77 @@ body {
 .title {
     font-size: 26px;
     font-weight: 700;
-    margin-bottom: 25px;
+    margin-bottom: 18px;
     text-align: center;
 }
 
-.menu {
+/* ─────────── TOP SCROLL MENU ─────────── */
+
+.top-scroll {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 10px;
 }
 
-.btn {
-    padding: 16px;
-    font-size: 18px;
-    border-radius: var(--radius);
-    border: none;
+.top-item {
+    white-space: nowrap;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 15px;
+    backdrop-filter: blur(6px);
     cursor: pointer;
+    transition: var(--transition);
+}
 
-    background: var(--tg-theme-button-color);
-    color: var(--tg-theme-button-text-color);
+.top-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* ─────────── MAIN BUTTON GRID ─────────── */
+
+.menu {
+    margin-top: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.card-btn {
+    padding: 20px 10px;
+    border-radius: 18px;
+    border: none;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    background: rgba(255,255,255,0.08);
+    color: white;
+
+    font-size: 16px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
 
     transition: var(--transition);
 }
 
-.btn:hover {
-    transform: scale(0.98);
+.card-btn:hover {
+    transform: scale(0.97);
+    background: rgba(255,255,255,0.15);
 }
 
+/* ─────────── CONTENT BOX ─────────── */
+
 #content {
-    margin-top: 30px;
+    margin-top: 25px;
     padding: 18px;
-    border-radius: var(--radius);
-    background: var(--tg-theme-secondary-bg-color);
+    border-radius: 16px;
+
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(10px);
 }
 
 .section-title {
@@ -62,9 +101,8 @@ body {
 }
 
 .item-card {
-    background: var(--tg-theme-bg-color);
-    border-radius: var(--radius);
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
     padding: 12px;
     margin-bottom: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
