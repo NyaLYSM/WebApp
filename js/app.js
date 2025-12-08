@@ -12,20 +12,21 @@ const palettes = [
     { bg:"#101820", card:"#18222c", text:"#e3eef8", accent:"#00aaff", waveA:"#6bbcff", waveB:"#0077ff" }
 ];
 
-
 function applyPalette(p) {
     document.documentElement.style.setProperty("--bg", p.bg);
     document.documentElement.style.setProperty("--card", p.card);
     document.documentElement.style.setProperty("--text", p.text);
     document.documentElement.style.setProperty("--accent", p.accent);
 
-    // waves colors:
-    document.documentElement.style.setProperty("--wave-start", p.waveA);
-    document.documentElement.style.setProperty("--wave-end", p.waveB);
+    // add wave palette
+    document.documentElement.style.setProperty("--wave-start", p.accent);
+    document.documentElement.style.setProperty("--wave-end", p.text);
 
     localStorage.setItem("palette", JSON.stringify(p));
-    setTimeout(() => startWaves(), 100); // перезапустить Waves
+
+    if (window.startWaves) startWaves(); // перезапуск волн
 }
+
 
 
 document.getElementById("palette-btn").onclick = () => {
@@ -38,6 +39,29 @@ document.getElementById("palette-btn").onclick = () => {
 let saved = localStorage.getItem("palette");
 if (saved) applyPalette(JSON.parse(saved));
 else applyPalette(palettes[0]);
+
+/* ========== NAVIGATION ========== */
+document.querySelectorAll(".btn[data-section]").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const sec = btn.dataset.section;
+        if (sec === "wardrobe") loadWardrobe();
+        if (sec === "add") loadAddItem();
+        if (sec === "looks") loadLooks();
+    });
+});
+
+/* SIMPLE TABS — ЗАГЛУШКИ */
+function loadWardrobe() {
+    document.getElementById("content").innerHTML = "<h3>Ваши вещи появятся здесь</h3>";
+}
+
+function loadAddItem() {
+    document.getElementById("content").innerHTML = "<h3>Добавление вещи</h3>";
+}
+
+function loadLooks() {
+    document.getElementById("content").innerHTML = "<h3>Ваши луки</h3>";
+}
 
 
 /* ========== IMPORT BY URL ========== */
