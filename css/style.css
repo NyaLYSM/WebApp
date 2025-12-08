@@ -87,3 +87,14 @@ body{
   transition:transform 0.6s cubic-bezier(.2,.8,.2,1);
 }
 .preview-3d:hover .img{transform:rotateY(12deg) translateY(-8px)}
+
+.input {
+    width: 100%;
+    padding: 14px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: none;
+    background: var(--card);
+    color: var(--text);
+    font-size: 16px;
+}
