@@ -1,39 +1,41 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>ИИ Стилист — WebApp</title>
 
-    <title>ИИ Стилист — WebApp</title>
+  <!-- Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <!-- Telegram Mini App JS -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
-
 <body>
-<canvas id="bgCanvas"></canvas>
-<div id="waves"></div>
+  <!-- Canvas waves (подложка) -->
+  <canvas id="bgCanvas"></canvas>
 
-<div class="container">
+  <div class="container">
     <div class="header">
-        <h1 class="title">Твой гардероб</h1>
-        <button id="palette-btn" class="small-btn">🎨</button>
+      <h1 class="title">Твой гардероб</h1>
+      <button id="palette-btn" class="small-btn" aria-label="Выбрать палитру">🎨</button>
     </div>
 
+    <!-- palette menu (рenders dynamically) -->
+    <div id="palette-menu" class="palette-menu hidden"></div>
+
     <div class="menu">
-        <button class="btn" data-section="wardrobe">👗 Вещи</button>
-        <button class="btn" data-section="add">📸 Добавить вещь</button>
-        <button class="btn" id="import-btn">🛒 Импорт по ссылке</button>
-        <button class="btn" data-section="looks">🎨 Луки</button>
+      <button class="btn" data-section="wardrobe">👗 Вещи</button>
+      <button class="btn" data-section="add">📸 Добавить вещь</button>
+      <button class="btn" id="import-btn">🛒 Импорт по ссылке</button>
+      <button class="btn" data-section="looks">🎨 Луки</button>
     </div>
 
     <div id="content"></div>
-</div>
+  </div>
 
-<script type="module" src="js/waves.js"></script>
-<script src="js/api.js"></script>
-<script src="js/app.js"></script>
+  <!-- core scripts (order matters) -->
+  <script src="js/waves.js?v=2"></script>
+  <script src="js/api.js?v=2"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>
