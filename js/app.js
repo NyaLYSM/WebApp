@@ -34,8 +34,8 @@
 	}
 
 	function hideOverlay() {
-		// ВАЖНО: Принудительно скрываем через атрибут. CSS позаботится о display:none
-		overlay.hidden = true;
+		// Это единственный способ, которым JS должен скрывать элемент
+		overlay.hidden = true; 
 		overlay.setAttribute("aria-hidden", "true");
 	}
 
