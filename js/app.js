@@ -124,29 +124,31 @@
   }
 
 
-  // Listeners
+ // Listeners
 
   // 1. Кнопка палитры открывает оверлей
-  paletteBtn.addEventListener("click", showOverlay); 
+  paletteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showOverlay();
+  }); 
 
   // 2. АВТО-выбор
-  paletteAuto.addEventListener("click", ()=> {
+  paletteAuto.addEventListener("click", (e) => {
+      e.stopPropagation();
       applyPalette(detectAutoPalette());
       hideOverlay();
   });
 
-  // 3. ПРЯМОЙ СЛУШАТЕЛЬ на кнопку "Закрыть"
-  paletteClose.addEventListener("click", e => {
-      // Останавливаем любое всплытие, чтобы избежать конфликтов с оверлеем
-      e.preventDefault(); 
-      e.stopPropagation(); 
+  // 3. Кнопка "Закрыть"
+  paletteClose.addEventListener("click", (e) => {
+      e.stopPropagation();
       hideOverlay();
   });
   
-  // 4. СЛУШАТЕЛЬ на клик по фону (Закрытие при клике мимо карточки)
-  overlay.addEventListener("click", e => {
-      // Если цель клика - сам оверлей (а не его дочерние элементы)
-      if (e.target === overlay){
+  // 4. Клик по фону оверлея (закрытие при клике мимо карточки)
+  overlay.addEventListener("click", (e) => {
+      // Если клик именно по оверлею (не по карточке внутри)
+      if (e.target === overlay) {
           hideOverlay();
       }
   });
