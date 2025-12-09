@@ -3,33 +3,29 @@ import { apiGet, apiPost } from "./api.js";
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Get user
 const USER_ID = tg.initDataUnsafe?.user?.id || 0;
-
 const content = document.getElementById("content");
 
-// ROUTES
+// pages map
 const routes = {
-    wardrobePage,
-    addPage,
-    looksPage,
-    profilePage
+    wardrobe: wardrobePage,
+    add: addPage,
+    looks: looksPage
 };
 
-// All buttons
+// bind main buttons
 document.querySelectorAll(".btn[data-section]").forEach(btn => {
-    btn.onclick = () => loadPage(btn.dataset.section);
+    btn.addEventListener("click", () => loadPage(btn.dataset.section));
 });
 
-// Import button
-document.getElementById("import-btn").onclick = () => importByUrl();
+// import by link
+document.getElementById("import-btn").onclick = importByUrl;
 
 function loadPage(name) {
-    routes[name + "Page"]?.();
+    routes[name]?.();
 }
 
-/* ========== 1) Вещи ========== */
-
+/* ========= wardrobe ========= */
 async function wardrobePage() {
     const data = await apiGet("/api/wardrobe/list", { user_id: USER_ID });
 
@@ -44,21 +40,23 @@ async function wardrobePage() {
         const el = document.createElement("div");
         el.className = "item-card";
         el.innerHTML = `
-            <img src="${item.image_url}" style="width:100%;border-radius:10px;margin-bottom:10px;">
-            <b>${item.name}</b> — <span>${item.item_type}</span>
+            <img src="${item.image_url}">
+            <div class="item-meta">
+                <b>${item.name}</b><br>
+                <span>${item.item_type}</span>
+            </div>
         `;
         list.appendChild(el);
     });
 }
 
-/* ========== 2) Добавить вручную ========== */
-
+/* ========= manual add ========= */
 function addPage() {
     content.innerHTML = `
-        <h2>Добавить вещь вручную</h2>
+        <h2>Добавить вручную</h2>
         <input id="manual-name" class="input" placeholder="Название">
         <input id="manual-url" class="input" placeholder="URL картинки">
-        <button id="manual-save" class="btn" style="margin-top:12px;">Сохранить</button>
+        <button id="manual-save" class="btn">Сохранить</button>
     `;
 
     document.getElementById("manual-save").onclick = manualAdd;
@@ -67,8 +65,7 @@ function addPage() {
 async function manualAdd() {
     const name = document.getElementById("manual-name").value;
     const url = document.getElementById("manual-url").value;
-
-    if (!name || !url) return alert("Заполните поля!");
+    if (!name || !url) return alert("Заполните поля");
 
     await apiPost("/api/wardrobe/add", {
         user_id: USER_ID,
@@ -77,14 +74,13 @@ async function manualAdd() {
         item_type: "manual"
     });
 
-    alert("Сохранено!");
+    alert("Добавлено!");
     wardrobePage();
 }
 
-/* ========== 3) Импорт по ссылке ========== */
-
+/* ========= import by URL ========= */
 async function importByUrl() {
-    const url = prompt("Вставьте ссылку на товар:");
+    const url = prompt("Введите ссылку на товар:");
     if (!url) return;
 
     const data = await apiPost("/api/import/fetch", { url });
@@ -103,34 +99,22 @@ async function importByUrl() {
 async function chooseImported(url) {
     const name = prompt("Название вещи:");
     if (!name) return;
-
     await apiPost("/api/wardrobe/add", {
         user_id: USER_ID,
         name,
         image_url: url,
         item_type: "import"
     });
-
     alert("Добавлено!");
     wardrobePage();
 }
 
-/* ========== 4) Луки ========== */
+/* ========= looks ========= */
 function looksPage() {
     content.innerHTML = `
         <h2>Генерация луков</h2>
-        <p>Скоро будет доступно.</p>
+        <p>Скоро...</p>
     `;
 }
 
-/* ========== 5) Профиль ========== */
-function profilePage() {
-    content.innerHTML = `
-        <h2>Профиль</h2>
-        <p>ID: <b>${USER_ID}</b></p>
-        <p>Здесь будет информация о подписке.</p>
-    `;
-}
-
-// Default open
 wardrobePage();
