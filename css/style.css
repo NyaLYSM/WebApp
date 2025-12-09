@@ -7,7 +7,7 @@
   --text: #ffffff;
   --muted: rgba(255,255,255,0.72);
   --accent: #6c5ce7;
-  /* wave gradient endpoints (used by waves) */
+  /* waves endpoints */
   --wave-start: #6dd3ff;
   --wave-end: #7b61ff;
   --container-max: 480px;
@@ -24,6 +24,7 @@ body{
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   overflow-x:hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Waves canvas covers full screen behind UI */
@@ -108,12 +109,14 @@ body{
 .btn:active{ transform: scale(0.99) translateY(1px); }
 .btn:focus{ outline:2px solid color-mix(in srgb, var(--accent) 40%, transparent 60%); }
 
+/* card style for content */
 .card{
   padding:14px;
   border-radius:14px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--card) 88%, transparent 12%), color-mix(in srgb, var(--card) 96%, black 6%));
   box-shadow: 0 8px 28px rgba(0,0,0,0.28);
   color:var(--text);
+  min-height:120px;
 }
 
 /* Wardrobe items */
@@ -147,7 +150,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.5);
+  background:rgba(0,0,0,0.48);
   z-index:20;
 }
 .palette-card{
@@ -184,10 +187,7 @@ body{
   .btn{ min-height:52px; font-size:15px; padding:12px; }
 }
 
-/* remove any stray bottom stripe */
-body > * { -webkit-tap-highlight-color: transparent; }
-
-/* light theme helper (if user picks a palette intended for light) */
+/* light theme helper */
 .root-light {
   --text: #111;
   --muted: rgba(0,0,0,0.54);
