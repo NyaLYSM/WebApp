@@ -1,120 +1,194 @@
-:root {
-    --bg: #f4f4f9;
-    --text: #222;
-    --card-bg: #ffffffd9;
-
-    /* Палитра волн */
-    --wave-start: #6dd3ff;
-    --wave-end: #7b61ff;
+:root{
+  --radius: 14px;
+  --transition: 0.22s ease;
+  /* palette vars (default dark) */
+  --bg: #0b0b12;
+  --card: #121216;
+  --text: #ffffff;
+  --muted: rgba(255,255,255,0.72);
+  --accent: #6c5ce7;
+  /* wave gradient endpoints (used by waves) */
+  --wave-start: #6dd3ff;
+  --wave-end: #7b61ff;
+  --container-max: 480px;
 }
 
-body {
-    margin: 0;
-    padding: 0;
-    font-family: system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    overflow-x: hidden;
+/* Reset */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
 }
 
-#bgCanvas {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
+/* Waves canvas covers full screen behind UI */
+#bgCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+  display:block;
 }
 
-/* CONTAINER */
-.container {
-    padding: 16px;
-    padding-bottom: 90px;
+/* Main container */
+.container{
+  position:relative;
+  z-index:5;
+  max-width:var(--container-max);
+  margin:24px auto;
+  padding:18px;
 }
 
-/* HEADER */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* top row: title + palette button */
+.top-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:18px;
 }
 
-.title {
-    font-size: 26px;
-    margin: 0 0 12px;
-    font-weight: bold;
+/* Title with gradient text */
+.title{
+  margin:0;
+  font-size:22px;
+  line-height:1;
+  font-weight:700;
+  background:linear-gradient(90deg, rgba(255,255,255,0.95), rgba(200,200,255,0.6));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
 }
 
-.small-btn {
-    padding: 8px 14px;
-    border-radius: 12px;
-    border: none;
-    background: #ffffffaa;
-    backdrop-filter: blur(4px);
-    cursor: pointer;
-    font-size: 18px;
+/* Palette small button */
+.small-btn{
+  padding:8px 12px;
+  font-size:16px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  background:var(--accent);
+  color:#fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transition:transform var(--transition), box-shadow var(--transition);
+}
+.small-btn:active{ transform: translateY(1px); }
+
+/* Menu 2x2 grid */
+.menu{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  margin-bottom:18px;
 }
 
-/* MENU BUTTONS */
-.menu {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
+/* Main buttons */
+.btn{
+  padding:14px;
+  font-size:16px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 75%, black 10%));
+  color:var(--text);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  text-align:center;
+  min-height:56px;
+}
+.btn:active{ transform: scale(0.99) translateY(1px); }
+.btn:focus{ outline:2px solid color-mix(in srgb, var(--accent) 40%, transparent 60%); }
+
+.card{
+  padding:14px;
+  border-radius:14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 88%, transparent 12%), color-mix(in srgb, var(--card) 96%, black 6%));
+  box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+  color:var(--text);
 }
 
-.btn {
-    flex: 1 1 calc(50% - 10px);
-    background: #fff;
-    border-radius: 14px;
-    padding: 14px;
-    border: none;
-    font-size: 15px;
-    cursor: pointer;
-    text-align: center;
-    box-shadow: 0 3px 8px #0001;
+/* Wardrobe items */
+.item-card{
+  background: color-mix(in srgb, var(--card) 94%, black 4%);
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+.item-card img{ width:100%; border-radius:10px; margin-bottom:8px; object-fit:cover; }
+
+/* Candidate images */
+.candidate-img{ width:100%; border-radius:12px; margin-bottom:12px; cursor:pointer; display:block; }
+
+/* inputs */
+.input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: color-mix(in srgb, var(--card) 92%, transparent 8%);
+  color:var(--text);
+  margin-bottom:8px;
 }
 
-/* CONTENT BLOCK */
-#content {
-    background: var(--card-bg);
-    padding: 14px;
-    border-radius: 16px;
-    min-height: 220px;
-    box-shadow: 0 5px 10px #0002;
+/* Palette overlay */
+.palette-overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.5);
+  z-index:20;
+}
+.palette-card{
+  width:min(420px, calc(100% - 32px));
+  background:var(--card);
+  border-radius:14px;
+  padding:14px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  color:var(--text);
+}
+.palette-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin:12px 0 14px;
+}
+.palette-swatch{
+  height:56px;
+  border-radius:10px;
+  cursor:pointer;
+  border:2px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  transition: transform 0.18s ease;
+}
+.palette-swatch:hover{ transform:translateY(-4px); }
+
+/* actions row in overlay */
+.palette-actions{ display:flex; gap:8px; justify-content:flex-end; }
+
+/* Responsive tweaks */
+@media (max-width:480px){
+  .container{ padding:14px; margin:18px auto; }
+  .title{ font-size:20px; }
+  .btn{ min-height:52px; font-size:15px; padding:12px; }
 }
 
-/* CANDIDATE IMAGES */
-.candidate-img {
-    width: 48%;
-    border-radius: 14px;
-    margin: 1%;
-    cursor: pointer;
-    box-shadow: 0 3px 8px #0003;
-}
+/* remove any stray bottom stripe */
+body > * { -webkit-tap-highlight-color: transparent; }
 
-/* INPUT FIELDS */
-.input {
-    width: 100%;
-    padding: 12px;
-    font-size: 15px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    border: 1px solid #ccccccaa;
-}
-
-/* WARDROBE CARDS */
-.item-card {
-    background: #fff;
-    padding: 12px;
-    border-radius: 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 3px 8px #0002;
-}
-
-.item-card img {
-    width: 100%;
-    border-radius: 12px;
-    margin-bottom: 10px;
-}
-
-.item-meta {
-    font-size: 14px;
+/* light theme helper (if user picks a palette intended for light) */
+.root-light {
+  --text: #111;
+  --muted: rgba(0,0,0,0.54);
 }
