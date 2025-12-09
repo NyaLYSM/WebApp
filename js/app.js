@@ -6,26 +6,30 @@ tg.expand();
 const USER_ID = tg.initDataUnsafe?.user?.id || 0;
 const content = document.getElementById("content");
 
-// pages map
+/* ROUTES */
 const routes = {
     wardrobe: wardrobePage,
     add: addPage,
-    looks: looksPage
+    looks: looksPage,
+    profile: profilePage
 };
 
-// bind main buttons
+/* Bind menu buttons */
 document.querySelectorAll(".btn[data-section]").forEach(btn => {
     btn.addEventListener("click", () => loadPage(btn.dataset.section));
 });
 
-// import by link
+/* Import button */
 document.getElementById("import-btn").onclick = importByUrl;
 
+/* Load route */
 function loadPage(name) {
     routes[name]?.();
 }
 
-/* ========= wardrobe ========= */
+/* =======================================================
+   1) ВЕЩИ
+======================================================= */
 async function wardrobePage() {
     const data = await apiGet("/api/wardrobe/list", { user_id: USER_ID });
 
@@ -39,18 +43,22 @@ async function wardrobePage() {
     data.items.forEach(item => {
         const el = document.createElement("div");
         el.className = "item-card";
+
         el.innerHTML = `
-            <img src="${item.image_url}">
+            <img src="${item.image_url}" alt="">
             <div class="item-meta">
                 <b>${item.name}</b><br>
                 <span>${item.item_type}</span>
             </div>
         `;
+
         list.appendChild(el);
     });
 }
 
-/* ========= manual add ========= */
+/* =======================================================
+   2) ДОБАВИТЬ ВРУЧНУЮ
+======================================================= */
 function addPage() {
     content.innerHTML = `
         <h2>Добавить вручную</h2>
@@ -65,7 +73,11 @@ function addPage() {
 async function manualAdd() {
     const name = document.getElementById("manual-name").value;
     const url = document.getElementById("manual-url").value;
-    if (!name || !url) return alert("Заполните поля");
+
+    if (!name || !url) {
+        alert("Заполните поля!");
+        return;
+    }
 
     await apiPost("/api/wardrobe/add", {
         user_id: USER_ID,
@@ -74,13 +86,15 @@ async function manualAdd() {
         item_type: "manual"
     });
 
-    alert("Добавлено!");
+    alert("Сохранено!");
     wardrobePage();
 }
 
-/* ========= import by URL ========= */
+/* =======================================================
+   3) ИМПОРТ ПО ССЫЛКЕ
+======================================================= */
 async function importByUrl() {
-    const url = prompt("Введите ссылку на товар:");
+    const url = prompt("Вставьте ссылку на товар:");
     if (!url) return;
 
     const data = await apiPost("/api/import/fetch", { url });
@@ -99,22 +113,37 @@ async function importByUrl() {
 async function chooseImported(url) {
     const name = prompt("Название вещи:");
     if (!name) return;
+
     await apiPost("/api/wardrobe/add", {
         user_id: USER_ID,
         name,
         image_url: url,
         item_type: "import"
     });
+
     alert("Добавлено!");
     wardrobePage();
 }
 
-/* ========= looks ========= */
+/* =======================================================
+   4) ЛУКИ
+======================================================= */
 function looksPage() {
     content.innerHTML = `
-        <h2>Генерация луков</h2>
-        <p>Скоро...</p>
+        <h2>Луки</h2>
+        <p>Функция скоро появится.</p>
     `;
 }
 
+/* =======================================================
+   5) ПРОФИЛЬ
+======================================================= */
+function profilePage() {
+    content.innerHTML = `
+        <h2>Профиль</h2>
+        <p>ID: <b>${USER_ID}</b></p>
+    `;
+}
+
+/* Start on wardrobe tab */
 wardrobePage();
