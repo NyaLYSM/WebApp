@@ -124,39 +124,31 @@
 
 
 	// Listeners
-	paletteBtn.addEventListener("click", showOverlay); 
 
-	paletteAuto.addEventListener("click", ()=> {
-    applyPalette(detectAutoPalette());
-    hideOverlay();
-	});
-  
-	// Единый, надежный слушатель кликов на всем оверлее
-	overlay.addEventListener("click", e => {
+  // 1. Кнопка палитры открывает оверлей
+  paletteBtn.addEventListener("click", showOverlay); 
+
+  // 2. АВТО-выбор
+  paletteAuto.addEventListener("click", ()=> {
+      applyPalette(detectAutoPalette());
+      hideOverlay();
+  });
+
+  // 3. ПРЯМОЙ СЛУШАТЕЛЬ на кнопку "Закрыть" (Самый надежный метод)
+  paletteClose.addEventListener("click", e => {
+      // Останавливаем любое всплытие, чтобы избежать конфликтов с оверлеем
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      hideOverlay();
+  });
     
-		// 1. ПЕРВАЯ ПРОВЕРКА: Закрытие по кнопке "Закрыть"
-		const closeBtnClicked = e.target.id === 'palette-close' || e.target.closest('#palette-close');
-		if (closeBtnClicked) {
-			e.stopPropagation(); // Гарантируем, что событие не пойдет дальше
-			hideOverlay();
-			return;
-		}
-
-		// 2. ВТОРАЯ ПРОВЕРКА: Закрытие по клику на фон (если цель клика - сам оверлей)
-		if (e.target === overlay){
-			hideOverlay();
-			return;
-		}
-
-		// 3. ПРОВЕРКА: Закрытие по свитчу палитры (если кликнули на элемент палитры)
-		const swatchClicked = e.target.closest('.palette-swatch');
-		if (swatchClicked) {
-			// Логика выбора палитры уже встроена в onclick свитча,
-			// и он сам вызывает hideOverlay().
-			return; 
-		}
-
-	});
+  // 4. СЛУШАТЕЛЬ на клик по фону (Закрытие при клике мимо карточки)
+  overlay.addEventListener("click", e => {
+      // Если цель клика - сам оверлей (а не его дочерние элементы)
+      if (e.target === overlay){
+          hideOverlay();
+      }
+  });
 
   // Init
   buildPaletteGrid();
