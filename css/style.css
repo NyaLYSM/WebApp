@@ -150,10 +150,10 @@ body{
   align-items:center;
   justify-content:center;
   background:rgba(0,0,0,0.48);
-  z-index:999; /* ИСПРАВЛЕНИЕ: Устанавливаем высокий индекс, чтобы быть над #bgCanvas (z-index: 0) */
+  /* ГАРАНТИРОВАННО ВЫСОКИЙ Z-INDEX */
+  z-index: 10000; 
 }
 
-/* css/style.css (Строка ~160) */
 
 .palette-grid{
   display:grid;
@@ -161,13 +161,29 @@ body{
   gap:10px;
   padding: 10px 0;
 }
+
+.palette-card{
+  /* Убеждаемся, что карточка не шире 420px */
+  width:min(420px, calc(100% - 32px)); 
+  background:var(--card, #121216);
+  border-radius:14px;
+  padding:14px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  color:var(--text);
+  /* ДОБАВЛЕНО: Явно задаем максимальную ширину для внутренних элементов */
+  max-width: 420px; 
+}
+
 .palette-swatch{
-  height:48px; /* ИСПРАВЛЕНИЕ: Фиксированная высота для прямоугольника */
+  height:48px; 
+  /* ДОБАВЛЕНО: Устанавливаем ширину в 100% от grid-ячейки */
+  width: 100%; 
   border-radius:10px;
   cursor:pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.1); /* Легкая граница */
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 }
+
 .palette-swatch:hover{
   box-shadow: 0 0 0 3px var(--accent); /* Эффект при наведении */
   transform: translateY(-1px);
