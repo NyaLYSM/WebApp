@@ -204,7 +204,3 @@ body{
   --text: #111;
   --muted: rgba(0,0,0,0.54);
 }
-
-.palette-overlay[hidden] {
-  display: none !important;
-}
