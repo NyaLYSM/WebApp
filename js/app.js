@@ -122,29 +122,41 @@
     });
   }
 
-  // Listeners
-  paletteBtn.addEventListener("click", showOverlay);
-  
-  // paletteClose.addEventListener("click", hideOverlay); // УДАЛЕНО: Слишком ненадежно
 
-  paletteAuto.addEventListener("click", ()=> {
+	// Listeners
+	paletteBtn.addEventListener("click", showOverlay); 
+
+	paletteAuto.addEventListener("click", ()=> {
     applyPalette(detectAutoPalette());
     hideOverlay();
-  });
+	});
   
-  // Единый, надежный слушатель кликов на всем оверлее (включая кнопку "Закрыть")
-  overlay.addEventListener("click", e => {
-    // 1. Проверяем, не нажата ли кнопка "Закрыть" (самая важная часть)
-    if (e.target.id === 'palette-close' || e.target.closest('#palette-close')) {
-        hideOverlay();
-        return;
-    }
+	// Единый, надежный слушатель кликов на всем оверлее
+	overlay.addEventListener("click", e => {
+    
+		// 1. ПЕРВАЯ ПРОВЕРКА: Закрытие по кнопке "Закрыть"
+		const closeBtnClicked = e.target.id === 'palette-close' || e.target.closest('#palette-close');
+		if (closeBtnClicked) {
+			e.stopPropagation(); // Гарантируем, что событие не пойдет дальше
+			hideOverlay();
+			return;
+		}
 
-    // 2. Проверяем, что клик был именно по оверлею (закрываем фон)
-    if (e.target === overlay){
-        hideOverlay();
-    }
-  });
+		// 2. ВТОРАЯ ПРОВЕРКА: Закрытие по клику на фон (если цель клика - сам оверлей)
+		if (e.target === overlay){
+			hideOverlay();
+			return;
+		}
+
+		// 3. ПРОВЕРКА: Закрытие по свитчу палитры (если кликнули на элемент палитры)
+		const swatchClicked = e.target.closest('.palette-swatch');
+		if (swatchClicked) {
+			// Логика выбора палитры уже встроена в onclick свитча,
+			// и он сам вызывает hideOverlay().
+			return; 
+		}
+
+	});
 
   // Init
   buildPaletteGrid();
