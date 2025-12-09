@@ -1,19 +1,30 @@
-window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
+// js/api.js
+(function(){
+  window.BACKEND_URL = window.BACKEND_URL || "https://stylist-backend-h5jl.onrender.com";
 
-// Unified GET
-export async function apiGet(path, params = {}) {
-    const query = new URLSearchParams(params).toString();
-    const url = BACKEND_URL + path + (query ? "?" + query : "");
-    const res = await fetch(url);
+  window.apiGet = async function(path, params) {
+    params = params || {};
+    const qs = new URLSearchParams(params).toString();
+    const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
+    const res = await fetch(url, { credentials: "omit" });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("API GET error: " + res.status + " - " + txt);
+    }
     return await res.json();
-}
+  };
 
-// Unified POST
-export async function apiPost(path, data) {
-    const res = await fetch(BACKEND_URL + path, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
+  window.apiPost = async function(path, payload) {
+    const url = window.BACKEND_URL + path;
+    const res = await fetch(url, {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload || {})
     });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("API POST error: " + res.status + " - " + txt);
+    }
     return await res.json();
-}
+  };
+})();
