@@ -25,17 +25,18 @@
       overlay.setAttribute("aria-hidden", "true");
   }
 
-  // Helper to hide/show
+	// Helper to hide/show
 	function showOverlay() {
 		overlay.hidden = false;
-		// Убираем инлайн стиль, чтобы сработал CSS класс (display:flex)
+		// Убираем инлайн-стиль display, чтобы сработал CSS класс (display:flex)
 		overlay.style.display = ''; 
 		overlay.setAttribute("aria-hidden", "false");
 	}
-
+	
 	function hideOverlay() {
-		// Это единственный способ, которым JS должен скрывать элемент
-		overlay.hidden = true; 
+		// ВАЖНО: Принудительно скрываем через инлайн-стиль для гарантированного закрытия
+		overlay.hidden = true;
+		overlay.style.display = 'none'; // <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ
 		overlay.setAttribute("aria-hidden", "true");
 	}
 
@@ -123,7 +124,7 @@
   }
 
 
-	// Listeners
+  // Listeners
 
   // 1. Кнопка палитры открывает оверлей
   paletteBtn.addEventListener("click", showOverlay); 
@@ -134,14 +135,14 @@
       hideOverlay();
   });
 
-  // 3. ПРЯМОЙ СЛУШАТЕЛЬ на кнопку "Закрыть" (Самый надежный метод)
+  // 3. ПРЯМОЙ СЛУШАТЕЛЬ на кнопку "Закрыть"
   paletteClose.addEventListener("click", e => {
       // Останавливаем любое всплытие, чтобы избежать конфликтов с оверлеем
       e.preventDefault(); 
       e.stopPropagation(); 
       hideOverlay();
   });
-    
+  
   // 4. СЛУШАТЕЛЬ на клик по фону (Закрытие при клике мимо карточки)
   overlay.addEventListener("click", e => {
       // Если цель клика - сам оверлей (а не его дочерние элементы)
