@@ -26,17 +26,18 @@
   }
 
   // Helper to hide/show
-  function showOverlay() {
-      overlay.hidden = false;
-      overlay.style.display = ''; // Убираем инлайн стиль, чтобы сработал CSS класс (flex)
-      overlay.setAttribute("aria-hidden", "false");
-  }
+	function showOverlay() {
+		overlay.hidden = false;
+		// Убираем инлайн стиль, чтобы сработал CSS класс (display:flex)
+		overlay.style.display = ''; 
+		overlay.setAttribute("aria-hidden", "false");
+	}
 
-  function hideOverlay() {
-      overlay.hidden = true;
-      overlay.setAttribute("aria-hidden", "true");
-      // CSS правило .palette-overlay[hidden] { display: none !important; } сделает остальное
-  }
+	function hideOverlay() {
+		// ВАЖНО: Принудительно скрываем через атрибут. CSS позаботится о display:none
+		overlay.hidden = true;
+		overlay.setAttribute("aria-hidden", "true");
+	}
 
   // Palettes config
   const PALETTES = [
@@ -130,8 +131,9 @@
   });
   
   overlay.addEventListener("click", e => {
+    // ВАЖНО: Проверяем, что клик был именно по оверлею, а не по его содержимому
     if (e.target === overlay){
-      hideOverlay();
+        hideOverlay();
     }
   });
 
