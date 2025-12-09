@@ -18,11 +18,27 @@
   const paletteClose = document.getElementById("palette-close");
   const paletteAuto = document.getElementById("palette-auto");
 
-  // Make sure overlay hidden at start
-  overlay.hidden = true;
-  overlay.setAttribute("aria-hidden", "true");
+  // === ВАЖНОЕ ИСПРАВЛЕНИЕ: Гарантированно скрываем при старте ===
+  if(overlay) {
+      overlay.hidden = true;
+      overlay.style.display = 'none'; // Дублируем через стиль для надежности до загрузки CSS
+      overlay.setAttribute("aria-hidden", "true");
+  }
 
-  // Palettes
+  // Helper to hide/show
+  function showOverlay() {
+      overlay.hidden = false;
+      overlay.style.display = ''; // Убираем инлайн стиль, чтобы сработал CSS класс (flex)
+      overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function hideOverlay() {
+      overlay.hidden = true;
+      overlay.setAttribute("aria-hidden", "true");
+      // CSS правило .palette-overlay[hidden] { display: none !important; } сделает остальное
+  }
+
+  // Palettes config
   const PALETTES = [
     { name:"Dark Blue", bg:"#0b0b12", card:"#121216", text:"#ffffff", accent:"#6c5ce7", waveStart:"#6dd3ff", waveEnd:"#7b61ff" },
     { name:"Purple", bg:"#1a0f1f", card:"#241327", text:"#ffffff", accent:"#d13cff", waveStart:"#ff6fd8", waveEnd:"#b06cff" },
@@ -32,7 +48,6 @@
     { name:"Aurora", bg:"#101820", card:"#18222c", text:"#e3eef8", accent:"#00aaff", waveStart:"#00f0ff", waveEnd:"#7b61ff" }
   ];
 
-  // tiny helper: luminance for bg detection
   function getLuminance(hex){
     if(!hex) return 0;
     hex = hex.replace("#","");
@@ -44,7 +59,6 @@
     return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2];
   }
 
-  // Apply palette to :root and persist
   function applyPalette(p, persist=true){
     if(!p) return;
     const root = document.documentElement;
@@ -63,14 +77,11 @@
       try { localStorage.setItem("stylist_palette", JSON.stringify(p)); } catch(e){}
     }
 
-    // If waves script exposes startWaves, call it to refresh colors
     if (window.startWaves) {
-      try { window.startWaves(); }
-      catch(e){ /* ignore */ }
+      try { window.startWaves(); } catch(e){}
     }
   }
 
-  // Detect auto palette from Telegram theme if available
   function detectAutoPalette(){
     if (tg?.themeParams?.bg_color) {
       const bg = tg.themeParams.bg_color;
@@ -83,10 +94,8 @@
     return PALETTES[0];
   }
 
-  // Load saved palette or detect auto
   function loadSaved(){
-    overlay.hidden = true;
-    overlay.setAttribute("aria-hidden", "true");
+    hideOverlay(); // Ensure hidden on load
 
     const raw = localStorage.getItem("stylist_palette");
     if(raw){
@@ -96,7 +105,6 @@
     applyPalette(detectAutoPalette(), true);
   }
 
-  // Build palette swatches grid
   function buildPaletteGrid(){
     paletteGrid.innerHTML = "";
     PALETTES.forEach((p,idx)=>{
@@ -107,54 +115,40 @@
       el.style.background = `linear-gradient(90deg, ${p.waveStart}, ${p.waveEnd})`;
       el.onclick = ()=>{
         applyPalette(p);
-        overlay.hidden = true;
-        overlay.setAttribute("aria-hidden","true");
+        hideOverlay();
       };
       paletteGrid.appendChild(el);
     });
   }
 
-  // overlay open/close handlers
-  paletteBtn.addEventListener("click", ()=> {
-    overlay.hidden = false;
-    overlay.setAttribute("aria-hidden","false");
-  });
-  paletteClose.addEventListener("click", ()=> {
-    overlay.hidden = true;
-    overlay.setAttribute("aria-hidden","true");
-  });
+  // Listeners
+  paletteBtn.addEventListener("click", showOverlay);
+  paletteClose.addEventListener("click", hideOverlay);
   paletteAuto.addEventListener("click", ()=> {
     applyPalette(detectAutoPalette());
-    overlay.hidden = true;
-    overlay.setAttribute("aria-hidden","true");
+    hideOverlay();
   });
-  // click outside card closes overlay
+  
   overlay.addEventListener("click", e => {
     if (e.target === overlay){
-      overlay.hidden = true;
-      overlay.setAttribute("aria-hidden","true");
+      hideOverlay();
     }
   });
 
-  // Build and load palette on init
+  // Init
   buildPaletteGrid();
   loadSaved();
 
-  // If waves loaded and exposes startWaves, call it to ensure color sync
+  // Waves fallback
   if(window.startWaves) {
     try { window.startWaves(); } catch(e){}
   }
-
-  // If waves script doesn't expose startWaves but uses CSS variables,
-  // we'll expose a safe no-op to avoid errors elsewhere:
   if(!window.startWaves) window.startWaves = function(){};
 
-  // Simple API helpers (use api.js from your project)
-  // apiGet and apiPost should already be defined in js/api.js
+  // Safe API helpers
   async function safeApiGet(path, params = {}){
     try {
       if(typeof apiGet === "function") return await apiGet(path, params);
-      // fallback: construct fetch
       const q = new URLSearchParams(params).toString();
       const res = await fetch((window.BACKEND_URL || "") + path + (q ? "?" + q : ""));
       return await res.json();
@@ -178,31 +172,41 @@
     }
   }
 
-  // Pages
+  // --- Pages Logic ---
+
   async function wardrobePage(){
     content.innerHTML = `<h2>Ваши вещи</h2><div id="wardrobe-list"><p>Загрузка…</p></div>`;
     const listEl = document.getElementById("wardrobe-list");
 
     const data = await safeApiGet("/api/wardrobe/list", { user_id: USER_ID });
-    if(!data || !data.items){
-      listEl.innerHTML = `<p>Ошибка загрузки вещей или пусто.</p>`;
-      return;
+    
+    // Check various data structures
+    if(!data) {
+        listEl.innerHTML = `<p>Ошибка соединения с сервером.</p>`;
+        return;
     }
+    
+    // Sometimes backend might return list directly or {items: []}
+    const items = data.items || (Array.isArray(data) ? data : []);
 
-    if(data.items.length === 0){
+    if(items.length === 0){
       listEl.innerHTML = `<p>Гардероб пуст — добавьте вещь.</p>`;
       return;
     }
 
     listEl.innerHTML = "";
-    data.items.forEach(item => {
+    items.forEach(item => {
       const el = document.createElement("div");
       el.className = "item-card";
+      // Fallback for different field names
       const img = item.image_url || item.photo_url || "";
+      const name = item.name || item.item_name || "Вещь";
+      const type = item.item_type || item.type || "";
+      
       el.innerHTML = `
-        ${img ? `<img src="${img}" alt="${item.name||'item'}">` : ''}
-        <div><strong>${item.name || item.item_name || "Без названия"}</strong></div>
-        <div style="color:var(--muted); font-size:13px;">${item.item_type || item.itemType || ""}</div>
+        ${img ? `<img src="${img}" alt="${name}">` : ''}
+        <div><strong>${name}</strong></div>
+        <div style="color:var(--muted); font-size:13px;">${type}</div>
       `;
       listEl.appendChild(el);
     });
@@ -210,18 +214,26 @@
 
   function addPage(){
     content.innerHTML = `
-      <h2>Добавить вещь вручную</h2>
-      <input id="manual-name" class="input" placeholder="Название">
-      <input id="manual-url" class="input" placeholder="URL картинки">
-      <button id="manual-save" class="btn" style="margin-top:8px;">Сохранить</button>
+      <h2>Добавить вещь</h2>
+      <input id="manual-name" class="input" placeholder="Название (например: Белая футболка)">
+      <input id="manual-url" class="input" placeholder="Ссылка на фото (URL)">
+      <button id="manual-save" class="btn" style="margin-top:12px;">Сохранить</button>
     `;
     document.getElementById("manual-save").onclick = manualAdd;
   }
 
   async function manualAdd(){
-    const name = document.getElementById("manual-name").value.trim();
-    const url = document.getElementById("manual-url").value.trim();
-    if(!name || !url) return alert("Заполните поля!");
+    const nameBtn = document.getElementById("manual-save");
+    const nameInp = document.getElementById("manual-name");
+    const urlInp = document.getElementById("manual-url");
+    
+    const name = nameInp.value.trim();
+    const url = urlInp.value.trim();
+    
+    if(!name || !url) return alert("Пожалуйста, заполните оба поля.");
+
+    nameBtn.textContent = "Сохранение...";
+    nameBtn.disabled = true;
 
     const res = await safeApiPost("/api/wardrobe/add", {
       user_id: USER_ID,
@@ -230,71 +242,88 @@
       item_type: "manual"
     });
 
-    if(res && res.item){
-      alert("Сохранено!");
-      wardrobePage();
+    nameBtn.textContent = "Сохранить";
+    nameBtn.disabled = false;
+
+    if(res){
+      alert("Вещь успешно добавлена!");
+      wardrobePage(); // go back to list
+      // Update menu state visually
+      btns.forEach(x => x.setAttribute("aria-pressed","false"));
+      document.querySelector('.btn[data-section="wardrobe"]')?.setAttribute("aria-pressed","true");
     } else {
-      alert("Ошибка при сохранении. Проверьте backend.");
+      alert("Не удалось сохранить. Проверьте консоль.");
     }
   }
 
   async function importByUrl(){
-    const url = prompt("Вставьте ссылку на товар:");
+    const url = prompt("Вставьте ссылку на страницу товара (Wildberries, Lamoda и т.д.):");
     if(!url) return;
 
-    content.innerHTML = `<h2>Поиск изображений</h2><p>Загрузка кандидатов…</p>`;
+    content.innerHTML = `<h2>Поиск изображений</h2><p>Анализирую сайт...</p>`;
 
     const data = await safeApiPost("/api/import/fetch", { url });
-    if(!data || !data.candidates){
-      content.innerHTML = `<p>Картинки не найдены или ошибка.</p>`;
+    
+    // Handle both {candidates: []} and direct array
+    const candidates = data?.candidates || [];
+
+    if(!candidates || candidates.length === 0){
+      content.innerHTML = `
+        <h2>Ничего не найдено</h2>
+        <p>Не удалось извлечь картинки по этой ссылке. Попробуйте добавить вручную.</p>
+        <button class="btn" onclick="document.querySelector('.btn[data-section=\\'add\\']').click()">Добавить вручную</button>
+      `;
       return;
     }
 
-    content.innerHTML = `<h2>Выберите изображение</h2><div id="candidates"></div>`;
+    content.innerHTML = `<h2>Выберите фото</h2><div id="candidates"></div>`;
     const ctn = document.getElementById("candidates");
-    data.candidates.forEach(c => {
+    candidates.forEach(c => {
       const img = document.createElement("img");
       img.src = c.url;
       img.className = "candidate-img";
-      img.alt = "Кандидат";
       img.onclick = () => chooseImported(c.url);
       ctn.appendChild(img);
     });
   }
 
   async function chooseImported(url){
-    const name = prompt("Название вещи:");
+    const name = prompt("Как назвать эту вещь?");
     if(!name) return;
+    
+    content.innerHTML = `<h2>Сохранение...</h2>`;
+    
     const res = await safeApiPost("/api/wardrobe/add", {
       user_id: USER_ID,
       name,
       image_url: url,
       item_type: "import"
     });
-    if(res && res.item){
-      alert("Добавлено!");
+    
+    if(res){
+      alert("Сохранено!");
       wardrobePage();
     } else {
-      alert("Ошибка при добавлении. Проверьте backend.");
+      alert("Ошибка сохранения.");
+      wardrobePage();
     }
   }
 
   function looksPage(){
     content.innerHTML = `
-      <h2>Генерация луков</h2>
-      <p>Скоро будет доступно (здесь будет выбор вещей и генерация).</p>
+      <h2>Генератор образов</h2>
+      <div class="card" style="text-align:center; background:transparent; box-shadow:none;">
+        <p style="opacity:0.7">Здесь ИИ будет собирать для вас готовые луки из вашего гардероба.</p>
+        <button class="btn" style="margin-top:10px;" onclick="alert('Функция в разработке!')">🎲 Сгенерировать лук</button>
+      </div>
     `;
   }
 
   function profilePage(){
-    content.innerHTML = `
-      <h2>Профиль</h2>
-      <p>ID: <strong>${USER_ID}</strong></p>
-      <p>Информация о подписке будет доступна в боте.</p>
-    `;
+    // Usually unused if no profile button in HTML, but good to have
+    content.innerHTML = `<h2>Профиль</h2><p>ID: ${USER_ID}</p>`;
   }
 
-  // Router setup (buttons)
   const pages = {
     wardrobe: wardrobePage,
     add: addPage,
@@ -302,35 +331,29 @@
     profile: profilePage
   };
 
-  // wire up menu buttons
   btns.forEach(b => {
     b.addEventListener("click", ()=>{
       const sec = b.dataset.section;
       if(sec && pages[sec]) {
         pages[sec]();
-        // update aria-pressed for accessibility
         btns.forEach(x => x.setAttribute("aria-pressed","false"));
         b.setAttribute("aria-pressed","true");
       }
     });
   });
 
-  // import button
   importBtn.addEventListener("click", importByUrl);
 
-  // Default open — wardrobe
+  // Init routing
   setTimeout(()=> {
-    // Mark first button pressed
     const first = document.querySelector('.btn[data-section="wardrobe"]');
     if(first) first.setAttribute("aria-pressed","true");
     wardrobePage();
   }, 80);
 
-  // expose a function to update waves from palette changes (safe)
+  // Expose
   window.updateWavesColors = function(){
-    if(window.startWaves) {
-      try { window.startWaves(); } catch(e) {}
-    }
+    if(window.startWaves) { try { window.startWaves(); } catch(e) {} }
   };
 
 })();
