@@ -143,16 +143,14 @@ body{
   margin-bottom:8px;
 }
 
-/* Palette overlay */
-.palette-overlay[hidden]{
-  display: none !important;
+.palette-overlay{
   position:fixed;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
   background:rgba(0,0,0,0.48);
-  z-index:20;
+  z-index:999; /* ИСПРАВЛЕНИЕ: Устанавливаем высокий индекс, чтобы быть над #bgCanvas (z-index: 0) */
 }
 
 .palette-card{
