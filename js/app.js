@@ -124,14 +124,23 @@
 
   // Listeners
   paletteBtn.addEventListener("click", showOverlay);
-  paletteClose.addEventListener("click", hideOverlay);
+  
+  // paletteClose.addEventListener("click", hideOverlay); // УДАЛЕНО: Слишком ненадежно
+
   paletteAuto.addEventListener("click", ()=> {
     applyPalette(detectAutoPalette());
     hideOverlay();
   });
   
+  // Единый, надежный слушатель кликов на всем оверлее (включая кнопку "Закрыть")
   overlay.addEventListener("click", e => {
-    // ВАЖНО: Проверяем, что клик был именно по оверлею, а не по его содержимому
+    // 1. Проверяем, не нажата ли кнопка "Закрыть" (самая важная часть)
+    if (e.target.id === 'palette-close' || e.target.closest('#palette-close')) {
+        hideOverlay();
+        return;
+    }
+
+    // 2. Проверяем, что клик был именно по оверлею (закрываем фон)
     if (e.target === overlay){
         hideOverlay();
     }
