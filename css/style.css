@@ -153,31 +153,25 @@ body{
   z-index:999; /* ИСПРАВЛЕНИЕ: Устанавливаем высокий индекс, чтобы быть над #bgCanvas (z-index: 0) */
 }
 
-.palette-card{
-  width:min(420px, calc(100% - 32px));
-  background:var(--card, #121216); /* Добавили запасной цвет */
-  border-radius:14px;
-  padding:14px;
-  /* Увеличим тень, чтобы визуально отделить окно */
-  box-shadow: 0 0 24px rgba(0,0,0,0.6), 0 18px 48px rgba(0,0,0,0.45);
-  color:var(--text);
-}
-}
+/* css/style.css (Строка ~160) */
+
 .palette-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(3,1fr); /* Сетка из 3 равных колонок */
   gap:10px;
-  margin:12px 0 14px;
+  padding: 10px 0;
 }
 .palette-swatch{
-  height:56px;
+  height:48px; /* ИСПРАВЛЕНИЕ: Фиксированная высота для прямоугольника */
   border-radius:10px;
   cursor:pointer;
-  border:2px solid rgba(255,255,255,0.04);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-  transition: transform 0.18s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.1); /* Легкая граница */
 }
-.palette-swatch:hover{ transform:translateY(-4px); }
+.palette-swatch:hover{
+  box-shadow: 0 0 0 3px var(--accent); /* Эффект при наведении */
+  transform: translateY(-1px);
+}
 
 /* actions row in overlay */
 .palette-actions{ display:flex; gap:8px; justify-content:flex-end; }
