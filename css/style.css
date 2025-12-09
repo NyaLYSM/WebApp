@@ -144,7 +144,8 @@ body{
 }
 
 /* Palette overlay */
-.palette-overlay{
+.palette-overlay[hidden]{
+  display: none !important;
   position:fixed;
   inset:0;
   display:flex;
