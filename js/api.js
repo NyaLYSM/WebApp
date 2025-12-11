@@ -27,4 +27,18 @@
     }
     return await res.json();
   };
+
+  // multipart upload (file)
+  window.apiUploadFile = async function(path, formData) {
+    const url = window.BACKEND_URL + path;
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("API UPLOAD error: " + res.status + " - " + txt);
+    }
+    return await res.json();
+  };
 })();
