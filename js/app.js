@@ -1,46 +1,23 @@
-// js/app.js — non-module, self-contained
+// js/app.js — non-module
 (function(){
-  // safe Telegram WebApp access
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   try { tg && tg.expand && tg.expand(); } catch(e){}
 
-  // USER_ID fallback to 0 if not available
   const USER_ID = (tg?.initDataUnsafe?.user?.id) || 0;
 
-  // Elements
   const content = document.getElementById("content");
-  const btns = document.querySelectorAll(".btn[data-section]");
-  const importBtn = document.getElementById("import-btn");
+  const replenishBtn = document.getElementById("replenish-btn");
+  const menuBtns = document.querySelectorAll(".btn[data-section]");
 
   const paletteBtn = document.getElementById("palette-btn");
   const overlay = document.getElementById("palette-overlay");
   const paletteGrid = document.getElementById("palette-grid");
   const paletteClose = document.getElementById("palette-close");
   const paletteAuto = document.getElementById("palette-auto");
+  overlay.hidden = true;
+  overlay.style.display = "none";
 
-  // === ВАЖНОЕ ИСПРАВЛЕНИЕ: Гарантированно скрываем при старте ===
-  if(overlay) {
-      overlay.hidden = true;
-      overlay.style.display = 'none'; // Дублируем через стиль для надежности до загрузки CSS
-      overlay.setAttribute("aria-hidden", "true");
-  }
-
-	// Helper to hide/show
-	function showOverlay() {
-		overlay.hidden = false;
-		// Убираем инлайн-стиль display, чтобы сработал CSS класс (display:flex)
-		overlay.style.display = ''; 
-		overlay.setAttribute("aria-hidden", "false");
-	}
-	
-	function hideOverlay() {
-		// ВАЖНО: Принудительно скрываем через инлайн-стиль для гарантированного закрытия
-		overlay.hidden = true;
-		overlay.style.display = 'none'; // <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ
-		overlay.setAttribute("aria-hidden", "true");
-	}
-
-  // Palettes config
+  // palettes (same as earlier)
   const PALETTES = [
     { name:"Dark Blue", bg:"#0b0b12", card:"#121216", text:"#ffffff", accent:"#6c5ce7", waveStart:"#6dd3ff", waveEnd:"#7b61ff" },
     { name:"Purple", bg:"#1a0f1f", card:"#241327", text:"#ffffff", accent:"#d13cff", waveStart:"#ff6fd8", waveEnd:"#b06cff" },
@@ -49,17 +26,6 @@
     { name:"Warm", bg:"#1d1616", card:"#241b1b", text:"#ffeaea", accent:"#ff6b6b", waveStart:"#ffb199", waveEnd:"#ff6b6b" },
     { name:"Aurora", bg:"#101820", card:"#18222c", text:"#e3eef8", accent:"#00aaff", waveStart:"#00f0ff", waveEnd:"#7b61ff" }
   ];
-
-  function getLuminance(hex){
-    if(!hex) return 0;
-    hex = hex.replace("#","");
-    if(hex.length===3) hex = hex.split("").map(c=>c+c).join("");
-    const r = parseInt(hex.substr(0,2),16)/255;
-    const g = parseInt(hex.substr(2,2),16)/255;
-    const b = parseInt(hex.substr(4,2),16)/255;
-    const a = [r,g,b].map(v => v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4));
-    return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2];
-  }
 
   function applyPalette(p, persist=true){
     if(!p) return;
@@ -70,35 +36,21 @@
     root.style.setProperty("--accent", p.accent);
     root.style.setProperty("--wave-start", p.waveStart);
     root.style.setProperty("--wave-end", p.waveEnd);
-
-    const lum = getLuminance(p.bg);
-    if(lum > 0.6) root.classList.add("root-light");
-    else root.classList.remove("root-light");
-
-    if(persist) {
-      try { localStorage.setItem("stylist_palette", JSON.stringify(p)); } catch(e){}
-    }
-
-    if (window.startWaves) {
-      try { window.startWaves(); } catch(e){}
-    }
+    if(persist) try { localStorage.setItem("stylist_palette", JSON.stringify(p)); } catch(e){}
+    if (window.updateWavesColors) window.updateWavesColors();
   }
 
   function detectAutoPalette(){
     if (tg?.themeParams?.bg_color) {
       const bg = tg.themeParams.bg_color;
-      const lum = getLuminance(bg);
-      if(lum > 0.6){
-        return { bg:"#ffffff", card:"#fbfbfd", text:"#111", accent:"#4d7cff", waveStart:"#dfe9ff", waveEnd:"#b9befe" };
-      }
-      return PALETTES[0];
+      // simple luminance guess
+      const v = parseInt(bg.replace("#","").slice(0,2),16);
+      if(v > 200) return { bg:"#ffffff", card:"#fbfbfd", text:"#111", accent:"#4d7cff", waveStart:"#dfe9ff", waveEnd:"#b9befe" };
     }
     return PALETTES[0];
   }
 
   function loadSaved(){
-    hideOverlay(); // Ensure hidden on load
-
     const raw = localStorage.getItem("stylist_palette");
     if(raw){
       try { applyPalette(JSON.parse(raw), false); return; }
@@ -109,269 +61,232 @@
 
   function buildPaletteGrid(){
     paletteGrid.innerHTML = "";
-    PALETTES.forEach((p,idx)=>{
+    PALETTES.forEach((p)=>{
       const el = document.createElement("div");
       el.className = "palette-swatch";
       el.title = p.name;
-      el.setAttribute("role","button");
       el.style.background = `linear-gradient(90deg, ${p.waveStart}, ${p.waveEnd})`;
-      el.onclick = ()=>{
-        applyPalette(p);
-        hideOverlay();
-      };
+      el.onclick = ()=>{ applyPalette(p); hideOverlay(); };
       paletteGrid.appendChild(el);
     });
   }
 
+  function showOverlay(){ overlay.hidden = false; overlay.style.display = ""; overlay.setAttribute("aria-hidden","false"); }
+  function hideOverlay(){ overlay.hidden = true; overlay.style.display = "none"; overlay.setAttribute("aria-hidden","true"); }
 
- // Listeners
+  paletteBtn.addEventListener("click", ()=> showOverlay());
+  paletteAuto.addEventListener("click", ()=> { applyPalette(detectAutoPalette()); hideOverlay(); });
+  paletteClose.addEventListener("click", ()=> hideOverlay());
+  overlay.addEventListener("click", e => { if(e.target === overlay) hideOverlay(); });
 
-  // 1. Кнопка палитры открывает оверлей
-  paletteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      showOverlay();
-  }); 
-
-  // 2. АВТО-выбор
-  paletteAuto.addEventListener("click", (e) => {
-      e.stopPropagation();
-      applyPalette(detectAutoPalette());
-      hideOverlay();
-  });
-
-  // 3. Кнопка "Закрыть"
-  paletteClose.addEventListener("click", (e) => {
-      e.stopPropagation();
-      hideOverlay();
-  });
-  
-  // 4. Клик по фону оверлея (закрытие при клике мимо карточки)
-  overlay.addEventListener("click", (e) => {
-      // Если клик именно по оверлею (не по карточке внутри)
-      if (e.target === overlay) {
-          hideOverlay();
-      }
-  });
-
-  // Init
   buildPaletteGrid();
   loadSaved();
+  if(window.startWaves) window.startWaves();
 
-  // Waves fallback
-  if(window.startWaves) {
-    try { window.startWaves(); } catch(e){}
-  }
-  if(!window.startWaves) window.startWaves = function(){};
-
-  // Safe API helpers
-  async function safeApiGet(path, params = {}){
-    try {
-      if(typeof apiGet === "function") return await apiGet(path, params);
-      const q = new URLSearchParams(params).toString();
-      const res = await fetch((window.BACKEND_URL || "") + path + (q ? "?" + q : ""));
-      return await res.json();
-    } catch(e){
-      console.error("API GET error", e);
-      return null;
-    }
-  }
-  async function safeApiPost(path, body = {}){
-    try {
-      if(typeof apiPost === "function") return await apiPost(path, body);
-      const res = await fetch((window.BACKEND_URL || "") + path, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(body)
-      });
-      return await res.json();
-    } catch(e){
-      console.error("API POST error", e);
-      return null;
-    }
-  }
-
-  // --- Pages Logic ---
+  // --- Pages ---
 
   async function wardrobePage(){
     content.innerHTML = `<h2>Ваши вещи</h2><div id="wardrobe-list"><p>Загрузка…</p></div>`;
     const listEl = document.getElementById("wardrobe-list");
-
-    const data = await safeApiGet("/api/wardrobe/list", { user_id: USER_ID });
-    
-    // Check various data structures
-    if(!data) {
-        listEl.innerHTML = `<p>Ошибка соединения с сервером.</p>`;
-        return;
+    let data;
+    try {
+      data = await apiGet("/api/wardrobe/list", { user_id: USER_ID });
+    } catch(e){
+      console.error(e);
+      listEl.innerHTML = `<p>Не удалось загрузить данные — проверьте соединение.</p>`;
+      return;
     }
-    
-    // Sometimes backend might return list directly or {items: []}
-    const items = data.items || (Array.isArray(data) ? data : []);
-
+    const items = data?.items || [];
     if(items.length === 0){
-      listEl.innerHTML = `<p>Гардероб пуст — добавьте вещь.</p>`;
+      listEl.innerHTML = `<p>Гардероб пуст — пополните его.</p>`;
       return;
     }
-
     listEl.innerHTML = "";
-    items.forEach(item => {
-      const el = document.createElement("div");
-      el.className = "item-card";
-      // Fallback for different field names
-      const img = item.image_url || item.photo_url || "";
-      const name = item.name || item.item_name || "Вещь";
-      const type = item.item_type || item.type || "";
-      
-      el.innerHTML = `
-        ${img ? `<img src="${img}" alt="${name}">` : ''}
-        <div><strong>${name}</strong></div>
-        <div style="color:var(--muted); font-size:13px;">${type}</div>
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(2, 1fr)";
+    grid.style.gap = "10px";
+
+    items.forEach(it => {
+      const block = document.createElement("div");
+      block.className = "item-card";
+      block.innerHTML = `
+        ${it.image_url ? `<img src="${it.image_url}" alt="${it.name}">`:""}
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:600">${it.name}</div>
+            <div style="font-size:13px;color:var(--muted)">${it.item_type || ""}</div>
+          </div>
+        </div>
       `;
-      listEl.appendChild(el);
+      grid.appendChild(block);
     });
+    listEl.appendChild(grid);
   }
 
-  function addPage(){
+  // Replenish page (two small buttons: URL / Фото)
+  function replenishPage(){
     content.innerHTML = `
-      <h2>Добавить вещь</h2>
-      <input id="manual-name" class="input" placeholder="Название (например: Белая футболка)">
-      <input id="manual-url" class="input" placeholder="Ссылка на фото (URL)">
-      <button id="manual-save" class="btn" style="margin-top:12px;">Сохранить</button>
+      <h2>Пополнить гардероб</h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button id="tab-url" class="small-btn">URL</button>
+        <button id="tab-file" class="small-btn">Фото</button>
+      </div>
+      <div id="replenish-area"></div>
     `;
-    document.getElementById("manual-save").onclick = manualAdd;
+    document.getElementById("tab-url").onclick = () => replenishUrl();
+    document.getElementById("tab-file").onclick = () => replenishFile();
+    // default URL
+    replenishUrl();
   }
 
-  async function manualAdd(){
-    const nameBtn = document.getElementById("manual-save");
-    const nameInp = document.getElementById("manual-name");
-    const urlInp = document.getElementById("manual-url");
-    
-    const name = nameInp.value.trim();
-    const url = urlInp.value.trim();
-    
-    if(!name || !url) return alert("Пожалуйста, заполните оба поля.");
-
-    nameBtn.textContent = "Сохранение...";
-    nameBtn.disabled = true;
-
-    const res = await safeApiPost("/api/wardrobe/add", {
-      user_id: USER_ID,
-      name,
-      image_url: url,
-      item_type: "manual"
-    });
-
-    nameBtn.textContent = "Сохранить";
-    nameBtn.disabled = false;
-
-    if(res){
-      alert("Вещь успешно добавлена!");
-      wardrobePage(); // go back to list
-      // Update menu state visually
-      btns.forEach(x => x.setAttribute("aria-pressed","false"));
-      document.querySelector('.btn[data-section="wardrobe"]')?.setAttribute("aria-pressed","true");
-    } else {
-      alert("Не удалось сохранить. Проверьте консоль.");
-    }
+  // URL tab
+  function replenishUrl(){
+    const area = document.getElementById("replenish-area");
+    area.innerHTML = `
+      <div class="card">
+        <label>Название</label>
+        <input id="r-name" class="input" placeholder="Например: Белая футболка">
+        <label>Ссылка на фото</label>
+        <input id="r-url" class="input" placeholder="https://...">
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button id="r-add" class="btn">Добавить</button>
+          <button id="r-cancel" class="btn" style="background:transparent;color:var(--muted);box-shadow:none;">Отмена</button>
+        </div>
+        <div id="r-msg" style="margin-top:8px;color:var(--muted);font-size:13px;"></div>
+      </div>
+    `;
+    document.getElementById("r-add").onclick = async ()=>{
+      const name = document.getElementById("r-name").value.trim();
+      const url = document.getElementById("r-url").value.trim();
+      if(!name || !url){ alert("Заполните название и ссылку"); return; }
+      document.getElementById("r-add").disabled = true;
+      document.getElementById("r-add").textContent = "Добавление...";
+      try {
+        const res = await apiPost("/api/wardrobe/add_from_url", { user_id: USER_ID, name, url });
+        alert("Вещь добавлена!");
+        wardrobePage();
+      } catch(e){
+        console.error(e);
+        alert("Ошибка: " + (e.message || e));
+      } finally {
+        document.getElementById("r-add").disabled = false;
+        document.getElementById("r-add").textContent = "Добавить";
+      }
+    };
+    document.getElementById("r-cancel").onclick = () => wardrobePage();
   }
 
-  async function importByUrl(){
-    const url = prompt("Вставьте ссылку на страницу товара (Wildberries, Lamoda и т.д.):");
-    if(!url) return;
+  // File tab
+  function replenishFile(){
+    const area = document.getElementById("replenish-area");
+    area.innerHTML = `
+      <div class="card">
+        <label>Название</label>
+        <input id="f-name" class="input" placeholder="Например: Синяя куртка">
+        <label>Фото</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="f-fake" class="input" placeholder="Не выбрано" readonly style="flex:1">
+          <button id="f-choose" class="small-btn" title="Выбрать фото">🖼️</button>
+          <button id="f-clear" class="small-btn" title="Очистить" style="display:none">✖</button>
+        </div>
+        <input type="file" id="real-file" accept="image/*" style="display:none">
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button id="f-add" class="btn">Добавить</button>
+          <button id="f-cancel" class="btn" style="background:transparent;color:var(--muted);box-shadow:none;">Отмена</button>
+        </div>
+        <div id="f-msg" style="margin-top:8px;color:var(--muted);font-size:13px;"></div>
+      </div>
+    `;
 
-    content.innerHTML = `<h2>Поиск изображений</h2><p>Анализирую сайт...</p>`;
+    const realFile = document.getElementById("real-file");
+    const fake = document.getElementById("f-fake");
+    const chooseBtn = document.getElementById("f-choose");
+    const clearBtn = document.getElementById("f-clear");
 
-    const data = await safeApiPost("/api/import/fetch", { url });
-    
-    // Handle both {candidates: []} and direct array
-    const candidates = data?.candidates || [];
+    chooseBtn.onclick = () => realFile.click();
+    clearBtn.onclick = () => {
+      realFile.value = "";
+      fake.value = "";
+      fake.placeholder = "Не выбрано";
+      clearBtn.style.display = "none";
+    };
 
-    if(!candidates || candidates.length === 0){
-      content.innerHTML = `
-        <h2>Ничего не найдено</h2>
-        <p>Не удалось извлечь картинки по этой ссылке. Попробуйте добавить вручную.</p>
-        <button class="btn" onclick="document.querySelector('.btn[data-section=\\'add\\']').click()">Добавить вручную</button>
-      `;
-      return;
-    }
-
-    content.innerHTML = `<h2>Выберите фото</h2><div id="candidates"></div>`;
-    const ctn = document.getElementById("candidates");
-    candidates.forEach(c => {
-      const img = document.createElement("img");
-      img.src = c.url;
-      img.className = "candidate-img";
-      img.onclick = () => chooseImported(c.url);
-      ctn.appendChild(img);
+    realFile.addEventListener("change", (e)=>{
+      const f = realFile.files[0];
+      if(!f) return;
+      // file size limit check (5MB)
+      if(f.size > 5 * 1024 * 1024){ alert("Файл слишком большой (>5MB)"); realFile.value=""; return; }
+      fake.value = f.name;
+      clearBtn.style.display = "";
     });
-  }
 
-  async function chooseImported(url){
-    const name = prompt("Как назвать эту вещь?");
-    if(!name) return;
-    
-    content.innerHTML = `<h2>Сохранение...</h2>`;
-    
-    const res = await safeApiPost("/api/wardrobe/add", {
-      user_id: USER_ID,
-      name,
-      image_url: url,
-      item_type: "import"
-    });
-    
-    if(res){
-      alert("Сохранено!");
-      wardrobePage();
-    } else {
-      alert("Ошибка сохранения.");
-      wardrobePage();
-    }
+    document.getElementById("f-add").onclick = async () => {
+      const name = document.getElementById("f-name").value.trim();
+      const f = realFile.files[0];
+      if(!name) { alert("Введите название"); return; }
+      if(!f) { alert("Выберите фото"); return; }
+      const fd = new FormData();
+      fd.append("user_id", USER_ID);
+      fd.append("name", name);
+      fd.append("file", f, f.name);
+      document.getElementById("f-add").disabled = true;
+      document.getElementById("f-add").textContent = "Загрузка...";
+      try {
+        const res = await apiUploadFile("/api/wardrobe/add_from_file", fd);
+        alert("Вещь добавлена!");
+        wardrobePage();
+      } catch(e){
+        console.error(e);
+        alert("Ошибка: " + (e.message || e));
+      } finally {
+        document.getElementById("f-add").disabled = false;
+        document.getElementById("f-add").textContent = "Добавить";
+      }
+    };
+
+    document.getElementById("f-cancel").onclick = () => wardrobePage();
   }
 
   function looksPage(){
-    content.innerHTML = `
-      <h2>Генератор образов</h2>
-      <div class="card" style="text-align:center; background:transparent; box-shadow:none;">
-        <p style="opacity:0.7">Здесь ИИ будет собирать для вас готовые луки из вашего гардероба.</p>
-        <button class="btn" style="margin-top:10px;" onclick="alert('Функция в разработке!')">🎲 Сгенерировать лук</button>
-      </div>
-    `;
+    content.innerHTML = `<h2>Генератор луков</h2><p style="opacity:.7">Скоро здесь будет ИИогенерация луков.</p>`;
   }
 
-  function profilePage(){
-    // Usually unused if no profile button in HTML, but good to have
-    content.innerHTML = `<h2>Профиль</h2><p>ID: ${USER_ID}</p>`;
+  function inspoPage(){
+    content.innerHTML = `<h2>Вдохновение</h2><p style="opacity:.7">Место для ленты образов — пусто пока.</p>`;
   }
 
   const pages = {
     wardrobe: wardrobePage,
-    add: addPage,
     looks: looksPage,
-    profile: profilePage
+    inspo: inspoPage
   };
 
-  btns.forEach(b => {
+  // menu handlers
+  replenishBtn.addEventListener("click", () => {
+    replenishPage();
+    // unset other pressed
+    document.querySelectorAll(".btn[data-section]").forEach(x => x.setAttribute("aria-pressed","false"));
+  });
+  menuBtns.forEach(b => {
     b.addEventListener("click", ()=>{
       const sec = b.dataset.section;
       if(sec && pages[sec]) {
         pages[sec]();
-        btns.forEach(x => x.setAttribute("aria-pressed","false"));
+        // mark pressed state
+        document.querySelectorAll(".btn[data-section]").forEach(x => x.setAttribute("aria-pressed","false"));
         b.setAttribute("aria-pressed","true");
       }
     });
   });
 
-  importBtn.addEventListener("click", importByUrl);
-
-  // Init routing
+  // init
   setTimeout(()=> {
-    const first = document.querySelector('.btn[data-section="wardrobe"]');
-    if(first) first.setAttribute("aria-pressed","true");
+    document.querySelector('.btn[data-section="wardrobe"]')?.setAttribute("aria-pressed","true");
     wardrobePage();
   }, 80);
 
-  // Expose
-  window.updateWavesColors = function(){
-    if(window.startWaves) { try { window.startWaves(); } catch(e) {} }
-  };
+  // external API to update waves
+  window.updateWavesColors = function(){ if(window.startWaves) try{ window.startWaves(); } catch(e){} };
 
 })();
