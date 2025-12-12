@@ -1,16 +1,14 @@
 :root{
-  --radius: 14px;
-  --transition: 0.22s ease;
-  /* palette vars (default dark) */
-  --bg: #0b0b12;
-  --card: #121216;
-  --text: #ffffff;
-  --muted: rgba(255,255,255,0.72);
-  --accent: #6c5ce7;
-  /* waves endpoints */
-  --wave-start: #6dd3ff;
-  --wave-end: #7b61ff;
-  --container-max: 480px;
+  --radius:12px;
+  --transition:0.18s ease;
+  --bg:#0b0b12;
+  --card:#121216;
+  --text:#fff;
+  --muted:rgba(255,255,255,0.72);
+  --accent:#6c5ce7;
+  --wave-start:#6dd3ff;
+  --wave-end:#7b61ff;
+  --container-max:480px;
 }
 
 /* Reset */
@@ -22,185 +20,58 @@ body{
   background:var(--bg);
   color:var(--text);
   -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
   overflow-x:hidden;
-  -webkit-tap-highlight-color: transparent;
 }
 
-/* Waves canvas covers full screen behind UI */
+/* Waves canvas */
 #bgCanvas{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:0;
-  pointer-events:none;
-  display:block;
+  position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; display:block;
 }
 
-/* Main container */
-.container{
-  position:relative;
-  z-index:5;
-  max-width:var(--container-max);
-  margin:24px auto;
-  padding:18px;
-}
+/* container */
+.container{ position:relative; z-index:5; max-width:var(--container-max); margin:22px auto; padding:16px; }
 
-/* top row: title + palette button */
-.top-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:18px;
-}
+/* top row */
+.top-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; }
+.title{ margin:0; font-size:20px; font-weight:700; background:linear-gradient(90deg, #fff, #dfe6ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
 
-/* Title with gradient text */
-.title{
-  margin:0;
-  font-size:22px;
-  line-height:1;
-  font-weight:700;
-  background:linear-gradient(90deg, rgba(255,255,255,0.95), rgba(200,200,255,0.6));
-  -webkit-background-clip:text;
-  background-clip:text;
-  -webkit-text-fill-color:transparent;
-  color:transparent;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
-}
+/* small button */
+.small-btn{ padding:8px 12px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:#fff; box-shadow:0 8px 22px rgba(0,0,0,0.28); transition:transform var(--transition); }
+.small-btn:active{ transform:translateY(1px); }
 
-/* Palette small button */
-.small-btn{
-  padding:8px 12px;
-  font-size:16px;
-  border-radius:12px;
-  border:none;
-  cursor:pointer;
-  background:var(--accent);
-  color:#fff;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-  transition:transform var(--transition), box-shadow var(--transition);
-}
-.small-btn:active{ transform: translateY(1px); }
+/* menu */
+.menu{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
 
-/* Menu 2x2 grid */
-.menu{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-  margin-bottom:18px;
-}
+/* buttons */
+.btn{ padding:12px; border-radius:12px; border:none; cursor:pointer; background:linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 80%, black 6%)); color:var(--text); box-shadow:0 10px 28px rgba(0,0,0,0.22); transition:transform var(--transition); min-height:56px; font-size:16px; text-align:center; }
+.btn:active{ transform:scale(0.99) translateY(1px); }
 
-/* Main buttons */
-.btn{
-  padding:14px;
-  font-size:16px;
-  border-radius:12px;
-  border:none;
-  cursor:pointer;
-  background:linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 75%, black 10%));
-  color:var(--text);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
-  text-align:center;
-  min-height:56px;
-}
-.btn:active{ transform: scale(0.99) translateY(1px); }
-.btn:focus{ outline:2px solid color-mix(in srgb, var(--accent) 40%, transparent 60%); }
-
-/* card style for content */
-.card{
-  padding:14px;
-  border-radius:14px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 88%, transparent 12%), color-mix(in srgb, var(--card) 96%, black 6%));
-  box-shadow: 0 8px 28px rgba(0,0,0,0.28);
-  color:var(--text);
-  min-height:120px;
-}
-
-/* Wardrobe items */
-.item-card{
-  background: color-mix(in srgb, var(--card) 94%, black 4%);
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-}
-.item-card img{ width:100%; border-radius:10px; margin-bottom:8px; object-fit:cover; }
-
-/* Candidate images */
-.candidate-img{ width:100%; border-radius:12px; margin-bottom:12px; cursor:pointer; display:block; }
+/* card */
+.card{ padding:14px; border-radius:12px; background:linear-gradient(180deg, color-mix(in srgb, var(--card) 90%, transparent 10%), color-mix(in srgb, var(--card) 96%, black 6%)); box-shadow:0 10px 36px rgba(0,0,0,0.28); color:var(--text); min-height:140px; }
 
 /* inputs */
-.input{
-  width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,0.06);
-  background: color-mix(in srgb, var(--card) 92%, transparent 8%);
-  color:var(--text);
-  margin-bottom:8px;
-}
+.input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background: color-mix(in srgb, var(--card) 92%, transparent 8%); color:var(--text); margin-bottom:8px; }
 
-.palette-overlay{
-  position:fixed;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.48);
-  /* ГАРАНТИРОВАННО ВЫСОКИЙ Z-INDEX */
-  z-index: 10000; 
-}
+/* candidate image */
+.candidate-img{ width:100%; border-radius:12px; margin-bottom:12px; display:block; cursor:pointer; object-fit:cover; }
 
+/* item card */
+.item-card{ display:block; border-radius:10px; padding:10px; background: color-mix(in srgb, var(--card) 95%, black 4%); margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
+.item-card img{ width:100%; border-radius:8px; margin-bottom:8px; object-fit:cover; }
 
-.palette-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr); /* Сетка из 3 равных колонок */
-  gap:10px;
-  padding: 10px 0;
-}
+/* action row */
+.row{ display:flex; gap:8px; align-items:center; }
 
-.palette-card{
-  /* Убеждаемся, что карточка не шире 420px */
-  width:min(420px, calc(100% - 32px)); 
-  background:var(--card, #121216);
-  border-radius:14px;
-  padding:14px;
-  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
-  color:var(--text);
-  /* ДОБАВЛЕНО: Явно задаем максимальную ширину для внутренних элементов */
-  max-width: 420px; 
-}
+/* palette overlay */
+.palette-overlay{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.48); z-index:10000; }
+.palette-card{ width:min(420px, calc(100% - 32px)); background:var(--card); border-radius:12px; padding:12px; box-shadow:0 18px 48px rgba(0,0,0,0.45); color:var(--text); }
+.palette-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+.palette-swatch{ height:48px; border-radius:10px; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,0.12); border:2px solid rgba(255,255,255,0.04); transition:transform 0.16s ease; }
+.palette-swatch:hover{ transform:translateY(-4px); }
 
-.palette-swatch{
-  height:48px; 
-  /* ДОБАВЛЕНО: Устанавливаем ширину в 100% от grid-ячейки */
-  width: 100%; 
-  border-radius:10px;
-  cursor:pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
-}
+/* confirm modal (simple) */
+.confirm-wrap{ padding:12px; text-align:center; }
+.confirm-actions{ display:flex; gap:8px; justify-content:center; margin-top:10px; }
 
-.palette-swatch:hover{
-  box-shadow: 0 0 0 3px var(--accent); /* Эффект при наведении */
-  transform: translateY(-1px);
-}
-
-/* actions row in overlay */
-.palette-actions{ display:flex; gap:8px; justify-content:flex-end; }
-
-/* Responsive tweaks */
-@media (max-width:480px){
-  .container{ padding:14px; margin:18px auto; }
-  .title{ font-size:20px; }
-  .btn{ min-height:52px; font-size:15px; padding:12px; }
-}
-
-/* light theme helper */
-.root-light {
-  --text: #111;
-  --muted: rgba(0,0,0,0.54);
-}
+/* responsive */
+@media (max-width:480px){ .container{ padding:12px; margin:12px auto; } .title{ font-size:18px; } .btn{ min-height:52px; } }
