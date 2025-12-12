@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ИИ Стилист — WebApp</title>
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,16 +17,16 @@
     </div>
 
     <nav class="menu" role="navigation" aria-label="Меню">
-      <button class="btn" id="replenish-btn">➕ Пополнить гардероб</button>
+      <button class="btn" data-section="populate">➕ Пополнить гардероб</button>
       <button class="btn" data-section="wardrobe">👗 Вещи</button>
-      <button class="btn" data-section="looks">✨ Луки</button>
-      <button class="btn" data-section="inspo">🌟 Вдохновение</button>
+      <button class="btn" data-section="looks">✨ Образы</button>
+      <button class="btn" data-section="profile">⚙️ Профиль</button>
     </nav>
 
     <main id="content" class="card" aria-live="polite"></main>
   </div>
 
-  <div id="palette-overlay" class="palette-overlay" hidden>
+  <div id="palette-overlay" class="palette-overlay" hidden aria-hidden="true">
     <div class="palette-card" role="dialog" aria-modal="true" aria-label="Выбор палитры">
       <h3>Выбрать палитру</h3>
       <div class="palette-grid" id="palette-grid" role="list"></div>
