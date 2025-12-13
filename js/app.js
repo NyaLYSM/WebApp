@@ -52,7 +52,7 @@
   }
   
   // *** ИСПРАВЛЕНО: Логика инициализации палитры (объединена и очищена) ***
-  paletteBtn.addEventListener("click", ()=> { 
+paletteBtn.addEventListener("click", ()=> { 
     overlay.hidden=false; 
     overlay.style.display='flex'; 
   });
@@ -60,6 +60,10 @@
   (function initPalette(){ 
     buildPaletteGrid(); 
     loadSavedPalette(); 
+    
+    // *** ИСПРАВЛЕНО: Убедимся, что оверлей скрыт при старте. ***
+    overlay.hidden = true; 
+    overlay.style.display='none';
     const close=document.getElementById("palette-close"); 
     const auto=document.getElementById("palette-auto"); 
     
