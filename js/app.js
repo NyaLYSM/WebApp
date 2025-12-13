@@ -291,7 +291,7 @@
         // Если файл отменен, восстанавливаем состояние URL
         urlEl.value = "";
         urlEl.disabled = false;
-        urlEl.placeholder = "ИЛИ прямая ссылка на фото (http://example.com/image.jpg)";
+        urlEl.placeholder = "Прямая ссылка на фото (http://example.com/image.jpg)";
         clearBtn.style.display = "none";
       }
     });
@@ -303,7 +303,7 @@
       
       urlEl.value = "";
       urlEl.disabled = false;
-      urlEl.placeholder = "ИЛИ прямая ссылка на фото (http://example.com/image.jpg)";
+      urlEl.placeholder = "Прямая ссылка на фото (http://example.com/image.jpg)";
       clearBtn.style.display = "none";
     });
 
