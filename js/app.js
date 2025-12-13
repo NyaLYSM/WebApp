@@ -146,12 +146,13 @@
   }
 
   // URL form (import from product page -> show candidates -> save)
+// URL form (import from product page -> show candidates -> save)
   async function showUrlForm(){
     const b = document.getElementById("populate-body");
     b.innerHTML = `
-      <h3>Добавить по ссылке</h3>
-      <input id="prod-url" class="input" placeholder="Ссылка на страницу товара (например wildberries)">
-      <button id="find-btn" class="btn" style="margin-top:8px">Добавить</button>
+      <h3>Добавить по ссылке (Маркетплейс)</h3>
+      <input id="prod-url" class="input" placeholder="Ссылка на страницу товара (Wildberries, Lamoda...)">
+      <button id="find-btn" class="btn" style="margin-top:8px">Найти изображения</button>
       <div id="candidates"></div>
     `;
     document.getElementById("find-btn").addEventListener("click", async ()=>{
@@ -191,17 +192,131 @@
   }
 
   // File upload form
+// File upload form (объединенная: загрузка файла ИЛИ прямая ссылка на фото)
   function showFileForm(){
     const b = document.getElementById("populate-body");
     b.innerHTML = `
-      <h3>Загрузить фото</h3>
+      <h3>Загрузить фото / Добавить по URL</h3>
+
       <input id="upload-name" class="input" placeholder="Название вещи (например: Синяя куртка)">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input id="upload-file" type="file" accept="image/*" style="flex:1" />
-        <button id="upload-send" class="btn">Загрузить</button>
+
+      <input id="upload-url" class="input" placeholder="Прямая ссылка на фото (http://example.com/image.jpg)" style="margin-bottom:12px;">
+
+      <div class="input-group">
+        <div class="input-file-wrap">
+          <div id="file-display" class="file-selected-text">Файл не выбран...</div>
+          <button id="file-clear" class="file-clear-btn" style="display:none;">&times;</button>
+        </div>
+        <button id="file-trigger" class="file-select-btn">🖼️ Выбрать файл</button>
       </div>
+
+      <button id="upload-send" class="btn">Добавить в гардероб</button>
       <div id="upload-status" style="margin-top:8px"></div>
     `;
+
+    const fileEl = document.createElement("input");
+    fileEl.type = "file";
+    fileEl.accept = "image/*";
+    fileEl.style.display = "none";
+    document.body.appendChild(fileEl);
+
+    const nameEl = document.getElementById("upload-name");
+    const urlEl = document.getElementById("upload-url");
+    const displayEl = document.getElementById("file-display");
+    const clearBtn = document.getElementById("file-clear");
+    const statusEl = document.getElementById("upload-status");
+    const sendBtn = document.getElementById("upload-send");
+    const triggerBtn = document.getElementById("file-trigger");
+    let currentFile = null;
+
+    // 1. Логика выбора файла
+    triggerBtn.addEventListener("click", ()=> { fileEl.click(); });
+    fileEl.addEventListener("change", (e)=>{
+      currentFile = e.target.files[0] || null;
+      if(currentFile){
+        displayEl.textContent = currentFile.name;
+        clearBtn.style.display = "block";
+        urlEl.value = ""; // Очищаем поле URL, если выбран файл
+        urlEl.disabled = true; // Блокируем поле URL
+      } else {
+        displayEl.textContent = "Файл не выбран...";
+        clearBtn.style.display = "none";
+      }
+    });
+
+    // 2. Логика очистки выбора файла
+    clearBtn.addEventListener("click", ()=>{
+      currentFile = null;
+      fileEl.value = ""; // Сброс input[type=file]
+      displayEl.textContent = "Файл не выбран...";
+      clearBtn.style.display = "none";
+      urlEl.disabled = false; // Разблокируем поле URL
+    });
+
+    // 3. Логика ввода URL
+    urlEl.addEventListener("input", ()=>{
+      if(urlEl.value.trim()){
+        // Если что-то введено в URL, сбрасываем файл
+        if(currentFile){
+          currentFile = null;
+          fileEl.value = "";
+          displayEl.textContent = "Файл не выбран...";
+          clearBtn.style.display = "none";
+        }
+        triggerBtn.disabled = true; // Блокируем кнопку выбора файла
+      } else {
+        triggerBtn.disabled = false;
+      }
+    });
+
+    // 4. Логика отправки
+    sendBtn.addEventListener("click", async ()=>{
+      const name = nameEl.value.trim();
+      const url = urlEl.value.trim();
+
+      if(!name) return alert("Укажите название вещи");
+
+      if(currentFile){
+        // ОТПРАВКА ФАЙЛА
+        if(currentFile.size > 5*1024*1024) return alert("Файл слишком большой (макс 5 МБ)");
+        const fd = new FormData();
+        fd.append("user_id", USER_ID);
+        fd.append("name", name);
+        fd.append("file", currentFile, currentFile.name);
+
+        statusEl.textContent = "Загрузка файла...";
+        try {
+          // Здесь используется apiUpload, которое обрабатывает multipart/form-data
+          await apiUpload("/api/wardrobe/upload", fd);
+          statusEl.textContent = "Готово — вещь добавлена";
+          wardrobePage();
+        } catch(err){
+          console.error(err);
+          statusEl.textContent = "Ошибка: " + (err.message || err);
+        }
+      } else if (url) {
+        // ОТПРАВКА ССЫЛКИ НА ФОТО
+        statusEl.textContent = "Проверка ссылки...";
+        try {
+          // Проверяем, что это ссылка на картинку, прежде чем отправлять ее на бэк
+          // Можно использовать apiPost на /api/wardrobe/add
+          await apiPost("/api/wardrobe/add", { user_id: USER_ID, name, image_url: url, item_type: "url" });
+          statusEl.textContent = "Готово — вещь добавлена";
+          wardrobePage();
+        } catch(e){
+          statusEl.textContent = "Ошибка при сохранении: " + (e.message || e);
+        }
+      } else {
+        return alert("Выберите файл ИЛИ вставьте прямую ссылку на фото.");
+      }
+    });
+    // Удаляем временный инпут при переходе на другую страницу
+    b.addEventListener('DOMNodeRemoved', (e)=>{
+        if (e.target.id === 'populate-body') {
+            fileEl.remove();
+        }
+    });
+  }
 
     document.getElementById("upload-send").addEventListener("click", async ()=>{
       const name = document.getElementById("upload-name").value.trim();
