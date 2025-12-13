@@ -9,9 +9,7 @@
   const paletteBtn = document.getElementById("palette-btn");
   const overlay = document.getElementById("palette-overlay");
   const paletteGrid = document.getElementById("palette-grid");
-  const paletteClose = document.getElementById("palette-close");
-  const paletteAuto = document.getElementById("palette-auto");
-
+  
   // palettes from earlier code — omitted here for brevity; keep same as previously used.
   const PALETTES = [
     { name:"Dark Blue", bg:"#0b0b12", card:"#121216", text:"#ffffff", accent:"#6c5ce7", waveStart:"#6dd3ff", waveEnd:"#7b61ff" },
@@ -35,17 +33,51 @@
     if(window.updateWavesColors) window.updateWavesColors();
   }
   function loadSavedPalette(){ const raw = localStorage.getItem("stylist_palette"); if(raw) applyPalette(JSON.parse(raw)); else applyPalette(PALETTES[0]); }
-  function buildPaletteGrid(){ paletteGrid.innerHTML=""; PALETTES.forEach(p=>{ const el=document.createElement("div"); el.className="palette-swatch"; el.style.background=`linear-gradient(90deg, ${p.waveStart}, ${p.waveEnd})`; el.onclick=()=>{ applyPalette(p); overlay.hidden=true; overlay.style.display='none'; }; paletteGrid.appendChild(el); }); }
+  
+  // *** ИСПРАВЛЕНО: Генерация элементов палитры с правильными классами ***
+  function buildPaletteGrid(){ 
+    paletteGrid.innerHTML=""; 
+    PALETTES.forEach(p=>{ 
+        const el=document.createElement("div"); 
+        el.className="palette-swatch"; 
+        el.style.background=`linear-gradient(90deg, ${p.waveStart}, ${p.waveEnd})`; 
+        el.title = p.name;
+        el.onclick=()=>{ 
+            applyPalette(p); 
+            overlay.hidden=true; 
+            overlay.style.display='none'; 
+        }; 
+        paletteGrid.appendChild(el); 
+    }); 
+  }
+  
+  // *** ИСПРАВЛЕНО: Логика инициализации палитры (объединена и очищена) ***
+  paletteBtn.addEventListener("click", ()=> { 
+    overlay.hidden=false; 
+    overlay.style.display='flex'; 
+  });
 
-  paletteBtn.addEventListener("click", ()=> { overlay.hidden=false; overlay.style.display='flex'; });
-(function initPalette(){ 
+  (function initPalette(){ 
     buildPaletteGrid(); 
     loadSavedPalette(); 
     const close=document.getElementById("palette-close"); 
-    if(close) close.addEventListener("click", ()=>{ overlay.hidden=true; overlay.style.display='none'; }); 
     const auto=document.getElementById("palette-auto"); 
-    if(auto) auto.addEventListener("click", ()=>{ applyPalette(PALETTES[0]); overlay.hidden=true; overlay.style.display='none'; }); 
-    overlay.addEventListener("click",(e)=>{ if(e.target===overlay){ overlay.hidden=true; overlay.style.display='none'; } }); 
+    
+    if(close) close.addEventListener("click", ()=>{ 
+        overlay.hidden=true; 
+        overlay.style.display='none'; 
+    }); 
+    if(auto) auto.addEventListener("click", ()=>{ 
+        applyPalette(PALETTES[0]); 
+        overlay.hidden=true; 
+        overlay.style.display='none'; 
+    }); 
+    overlay.addEventListener("click",(e)=>{ 
+        if(e.target===overlay){ 
+            overlay.hidden=true; 
+            overlay.style.display='none'; 
+        } 
+    }); 
 
     // Добавляем инпут для файла в DOM, но скрытым, чтобы управлять им через JS
     const fileEl = document.createElement("input");
@@ -122,7 +154,7 @@
       <div class="confirm-wrap">
         <h3>Вы уверены, что хотите удалить вещь?</h3>
         <div class="confirm-actions">
-          <button id="del-yes" class="small-btn">Да, удалить</button>
+          <button id="del-yes" class="small-btn delete" style="background:#d32f2f; color:#fff;">Да, удалить</button>
           <button id="del-no" class="btn">Отмена</button>
         </div>
       </div>
@@ -134,7 +166,7 @@
         alert("Удалено");
         wardrobePage();
       } catch(e){
-        alert("Ошибка при удалении");
+        alert("Ошибка при удалении: " + (e.message || e) + ". Проверьте, что сервер разрешает метод DELETE.");
         wardrobePage();
       }
     });
@@ -159,11 +191,11 @@
     `;
     document.getElementById("tab-url").addEventListener("click", showUrlForm);
     document.getElementById("tab-file").addEventListener("click", showFileForm);
-    showUrlForm();
+    // *** ИСПРАВЛЕНО: Показываем форму по ссылке по умолчанию, как раньше ***
+    showUrlForm(); 
   }
 
   // URL form (import from product page -> show candidates -> save)
-// URL form (import from product page -> show candidates -> save)
   async function showUrlForm(){
     const b = document.getElementById("populate-body");
     b.innerHTML = `
@@ -218,7 +250,7 @@
 
       <div class="input-group">
         <div class="input-file-wrap">
-          <input id="upload-url" class="input file-display" placeholder="ИЛИ прямая ссылка на фото (http://example.com/image.jpg)" style="margin-bottom:0;" />
+          <input id="upload-url" class="input" placeholder="ИЛИ прямая ссылка на фото (http://example.com/image.jpg)" style="margin-bottom:0;" />
           <button id="file-clear" class="file-clear-btn" style="display:none;">&times;</button>
         </div>
         <button id="file-trigger" class="file-select-btn" aria-label="Выбрать файл">🖼️</button>
@@ -229,7 +261,7 @@
     `;
 
     // Элементы
-    const fileEl = document.getElementById("hidden-file-input"); // Берем инпут из DOM
+    const fileEl = document.getElementById("hidden-file-input"); 
     const nameEl = document.getElementById("upload-name");
     const urlEl = document.getElementById("upload-url");
     const clearBtn = document.getElementById("file-clear");
@@ -327,135 +359,6 @@
         }
       } else {
         return alert("Выберите файл ИЛИ вставьте прямую ссылку на фото.");
-      }
-    });
-  }
-
-    const fileEl = document.createElement("input");
-    fileEl.type = "file";
-    fileEl.accept = "image/*";
-    fileEl.style.display = "none";
-    document.body.appendChild(fileEl);
-
-    const nameEl = document.getElementById("upload-name");
-    const urlEl = document.getElementById("upload-url");
-    const displayEl = document.getElementById("file-display");
-    const clearBtn = document.getElementById("file-clear");
-    const statusEl = document.getElementById("upload-status");
-    const sendBtn = document.getElementById("upload-send");
-    const triggerBtn = document.getElementById("file-trigger");
-    let currentFile = null;
-
-    // 1. Логика выбора файла
-    triggerBtn.addEventListener("click", ()=> { fileEl.click(); });
-    fileEl.addEventListener("change", (e)=>{
-      currentFile = e.target.files[0] || null;
-      if(currentFile){
-        displayEl.textContent = currentFile.name;
-        clearBtn.style.display = "block";
-        urlEl.value = ""; // Очищаем поле URL, если выбран файл
-        urlEl.disabled = true; // Блокируем поле URL
-      } else {
-        displayEl.textContent = "Файл не выбран...";
-        clearBtn.style.display = "none";
-      }
-    });
-
-    // 2. Логика очистки выбора файла
-    clearBtn.addEventListener("click", ()=>{
-      currentFile = null;
-      fileEl.value = ""; // Сброс input[type=file]
-      displayEl.textContent = "Файл не выбран...";
-      clearBtn.style.display = "none";
-      urlEl.disabled = false; // Разблокируем поле URL
-    });
-
-    // 3. Логика ввода URL
-    urlEl.addEventListener("input", ()=>{
-      if(urlEl.value.trim()){
-        // Если что-то введено в URL, сбрасываем файл
-        if(currentFile){
-          currentFile = null;
-          fileEl.value = "";
-          displayEl.textContent = "Файл не выбран...";
-          clearBtn.style.display = "none";
-        }
-        triggerBtn.disabled = true; // Блокируем кнопку выбора файла
-      } else {
-        triggerBtn.disabled = false;
-      }
-    });
-
-    // 4. Логика отправки
-    sendBtn.addEventListener("click", async ()=>{
-      const name = nameEl.value.trim();
-      const url = urlEl.value.trim();
-
-      if(!name) return alert("Укажите название вещи");
-
-      if(currentFile){
-        // ОТПРАВКА ФАЙЛА
-        if(currentFile.size > 5*1024*1024) return alert("Файл слишком большой (макс 5 МБ)");
-        const fd = new FormData();
-        fd.append("user_id", USER_ID);
-        fd.append("name", name);
-        fd.append("file", currentFile, currentFile.name);
-
-        statusEl.textContent = "Загрузка файла...";
-        try {
-          // Здесь используется apiUpload, которое обрабатывает multipart/form-data
-          await apiUpload("/api/wardrobe/upload", fd);
-          statusEl.textContent = "Готово — вещь добавлена";
-          wardrobePage();
-        } catch(err){
-          console.error(err);
-          statusEl.textContent = "Ошибка: " + (err.message || err);
-        }
-      } else if (url) {
-        // ОТПРАВКА ССЫЛКИ НА ФОТО
-        statusEl.textContent = "Проверка ссылки...";
-        try {
-          // Проверяем, что это ссылка на картинку, прежде чем отправлять ее на бэк
-          // Можно использовать apiPost на /api/wardrobe/add
-          await apiPost("/api/wardrobe/add", { user_id: USER_ID, name, image_url: url, item_type: "url" });
-          statusEl.textContent = "Готово — вещь добавлена";
-          wardrobePage();
-        } catch(e){
-          statusEl.textContent = "Ошибка при сохранении: " + (e.message || e);
-        }
-      } else {
-        return alert("Выберите файл ИЛИ вставьте прямую ссылку на фото.");
-      }
-    });
-    // Удаляем временный инпут при переходе на другую страницу
-    b.addEventListener('DOMNodeRemoved', (e)=>{
-        if (e.target.id === 'populate-body') {
-            fileEl.remove();
-        }
-    });
-  }
-
-    document.getElementById("upload-send").addEventListener("click", async ()=>{
-      const name = document.getElementById("upload-name").value.trim();
-      const fileEl = document.getElementById("upload-file");
-      if(!name) return alert("Укажите название вещи");
-      if(!fileEl.files || !fileEl.files[0]) return alert("Выберите файл");
-      const file = fileEl.files[0];
-      if(file.size > 5*1024*1024) return alert("Файл слишком большой (макс 5 МБ)");
-      const fd = new FormData();
-      fd.append("user_id", USER_ID);
-      fd.append("name", name);
-      fd.append("file", file, file.name);
-
-      const status = document.getElementById("upload-status");
-      status.textContent = "Загрузка...";
-      try {
-        await apiUpload("/api/wardrobe/upload", fd);
-        status.textContent = "Готово — вещь добавлена";
-        wardrobePage();
-      } catch(err){
-        console.error(err);
-        status.textContent = "Ошибка: " + (err.message || err);
       }
     });
   }
