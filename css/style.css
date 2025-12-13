@@ -98,3 +98,71 @@ body{
 
 /* responsive */
 @media (max-width:480px){ .container{ padding:12px; margin:12px auto; } .title{ font-size:18px; } .btn{ min-height:52px; } }
+
+/* New styles for better file/url input */
+.input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px; /* Отступ между группами */
+}
+.input-file-wrap {
+    flex: 1;
+    position: relative;
+}
+/* Стилизация placeholder в input для исправления проблемы 1 */
+.input::placeholder {
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* Стили для кнопки "Загрузить фото" */
+.file-select-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px; /* Совпадает с высотой input */
+    padding: 0 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform var(--transition);
+    font-size: 16px;
+    line-height: 1;
+}
+.file-select-btn:active { transform: translateY(1px); }
+
+/* Стили для отображения выбранного файла */
+.file-selected-text {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card) 92%, transparent 8%);
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+    height: 40px;
+    line-height: 20px;
+}
+.file-clear-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 10;
+    padding: 4px;
+    line-height: 1;
+}
+
+/* Исправляем проблему, когда кнопка "Загрузить" была за кнопкой "Пополнить" */
+#populate-body .btn { margin-top: 8px; }
