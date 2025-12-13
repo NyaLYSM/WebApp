@@ -36,14 +36,37 @@ body{
 .title{ margin:0; font-size:20px; font-weight:700; background:linear-gradient(90deg, #fff, #dfe6ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
 
 /* small button */
-.small-btn{ padding:8px 12px; border-radius:10px; border:none; cursor:pointer; background:var(--accent); color:#fff; box-shadow:0 8px 22px rgba(0,0,0,0.28); transition:transform var(--transition); }
+.small-btn{
+  padding:8px 12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  background:var(--card); /* Фоном будет цвет карточки */
+  color:var(--text);
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transition:transform var(--transition);
+}
+.small-btn.delete { background: #d32f2f; color: #fff; } /* Выделяем кнопку удаления */
 .small-btn:active{ transform:translateY(1px); }
 
 /* menu */
 .menu{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
 
 /* buttons */
-.btn{ padding:12px; border-radius:12px; border:none; cursor:pointer; background:linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 80%, black 6%)); color:var(--text); box-shadow:0 10px 28px rgba(0,0,0,0.22); transition:transform var(--transition); min-height:56px; font-size:16px; text-align:center; }
+.btn{
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  /* ИСПОЛЬЗУЕМ АКЦЕНТНЫЙ ФОН ДЛЯ ГЛАВНЫХ КНОПОК */
+  background:var(--accent);
+  color:var(--text);
+  box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 60%, black);
+  transition:transform var(--transition), opacity var(--transition);
+  min-height:56px;
+  font-size:16px;
+  text-align:center;
+}
 .btn:active{ transform:scale(0.99) translateY(1px); }
 
 /* card */
