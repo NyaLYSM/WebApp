@@ -38,7 +38,24 @@
   function buildPaletteGrid(){ paletteGrid.innerHTML=""; PALETTES.forEach(p=>{ const el=document.createElement("div"); el.className="palette-swatch"; el.style.background=`linear-gradient(90deg, ${p.waveStart}, ${p.waveEnd})`; el.onclick=()=>{ applyPalette(p); overlay.hidden=true; overlay.style.display='none'; }; paletteGrid.appendChild(el); }); }
 
   paletteBtn.addEventListener("click", ()=> { overlay.hidden=false; overlay.style.display='flex'; });
-  (function initPalette(){ buildPaletteGrid(); loadSavedPalette(); const close=document.getElementById("palette-close"); if(close) close.addEventListener("click", ()=>{ overlay.hidden=true; overlay.style.display='none'; }); const auto=document.getElementById("palette-auto"); if(auto) auto.addEventListener("click", ()=>{ applyPalette(PALETTES[0]); overlay.hidden=true; overlay.style.display='none'; }); overlay.addEventListener("click",(e)=>{ if(e.target===overlay){ overlay.hidden=true; overlay.style.display='none'; } }); })();
+(function initPalette(){ 
+    buildPaletteGrid(); 
+    loadSavedPalette(); 
+    const close=document.getElementById("palette-close"); 
+    if(close) close.addEventListener("click", ()=>{ overlay.hidden=true; overlay.style.display='none'; }); 
+    const auto=document.getElementById("palette-auto"); 
+    if(auto) auto.addEventListener("click", ()=>{ applyPalette(PALETTES[0]); overlay.hidden=true; overlay.style.display='none'; }); 
+    overlay.addEventListener("click",(e)=>{ if(e.target===overlay){ overlay.hidden=true; overlay.style.display='none'; } }); 
+
+    // Добавляем инпут для файла в DOM, но скрытым, чтобы управлять им через JS
+    const fileEl = document.createElement("input");
+    fileEl.type = "file";
+    fileEl.accept = "image/*";
+    fileEl.id = "hidden-file-input";
+    fileEl.style.display = "none";
+    document.body.appendChild(fileEl);
+
+  })();
 
   // routing
   const pages = {
@@ -191,7 +208,6 @@
     }
   }
 
-  // File upload form
 // File upload form (объединенная: загрузка файла ИЛИ прямая ссылка на фото)
   function showFileForm(){
     const b = document.getElementById("populate-body");
@@ -200,19 +216,120 @@
 
       <input id="upload-name" class="input" placeholder="Название вещи (например: Синяя куртка)">
 
-      <input id="upload-url" class="input" placeholder="Прямая ссылка на фото (http://example.com/image.jpg)" style="margin-bottom:12px;">
-
       <div class="input-group">
         <div class="input-file-wrap">
-          <div id="file-display" class="file-selected-text">Файл не выбран...</div>
+          <input id="upload-url" class="input file-display" placeholder="ИЛИ прямая ссылка на фото (http://example.com/image.jpg)" style="margin-bottom:0;" />
           <button id="file-clear" class="file-clear-btn" style="display:none;">&times;</button>
         </div>
-        <button id="file-trigger" class="file-select-btn">🖼️ Выбрать файл</button>
+        <button id="file-trigger" class="file-select-btn" aria-label="Выбрать файл">🖼️</button>
       </div>
 
       <button id="upload-send" class="btn">Добавить в гардероб</button>
       <div id="upload-status" style="margin-top:8px"></div>
     `;
+
+    // Элементы
+    const fileEl = document.getElementById("hidden-file-input"); // Берем инпут из DOM
+    const nameEl = document.getElementById("upload-name");
+    const urlEl = document.getElementById("upload-url");
+    const clearBtn = document.getElementById("file-clear");
+    const statusEl = document.getElementById("upload-status");
+    const sendBtn = document.getElementById("upload-send");
+    const triggerBtn = document.getElementById("file-trigger");
+    let currentFile = null;
+
+    // Сброс поля выбора файла (на случай, если пользователь переключился с этой вкладки)
+    fileEl.value = ""; 
+
+    // --- ЛОГИКА ---
+
+    // 1. Логика выбора файла (при нажатии на кнопку)
+    triggerBtn.addEventListener("click", ()=> { fileEl.click(); });
+    
+    // 2. Логика отображения выбранного файла
+    fileEl.addEventListener("change", (e)=>{
+      currentFile = e.target.files[0] || null;
+      if(currentFile){
+        urlEl.value = currentFile.name; // Отображаем имя файла в поле URL
+        urlEl.disabled = true;          // Блокируем поле URL
+        urlEl.placeholder = currentFile.name; // Для сохранения имени
+        clearBtn.style.display = "block";
+        sendBtn.disabled = false;
+      } else {
+        // Если файл отменен, восстанавливаем состояние URL
+        urlEl.value = "";
+        urlEl.disabled = false;
+        urlEl.placeholder = "ИЛИ прямая ссылка на фото (http://example.com/image.jpg)";
+        clearBtn.style.display = "none";
+      }
+    });
+
+    // 3. Логика очистки выбора файла (крестик)
+    clearBtn.addEventListener("click", ()=>{
+      currentFile = null;
+      fileEl.value = ""; // Сброс input[type=file]
+      
+      urlEl.value = "";
+      urlEl.disabled = false;
+      urlEl.placeholder = "ИЛИ прямая ссылка на фото (http://example.com/image.jpg)";
+      clearBtn.style.display = "none";
+    });
+
+    // 4. Логика ввода URL (отмена режима выбора файла)
+    urlEl.addEventListener("input", ()=>{
+      if(urlEl.value.trim()){
+        // Если что-то введено в URL, сбрасываем файл
+        if(currentFile){
+          currentFile = null;
+          fileEl.value = "";
+          clearBtn.click(); // Используем клик по крестику для сброса состояния
+        }
+        triggerBtn.disabled = true; // Блокируем кнопку выбора файла
+        sendBtn.disabled = false;
+      } else {
+        triggerBtn.disabled = false;
+      }
+    });
+
+    // 5. Логика отправки
+    sendBtn.addEventListener("click", async ()=>{
+      const name = nameEl.value.trim();
+      const url = urlEl.value.trim();
+
+      if(!name) return alert("Укажите название вещи");
+
+      if(currentFile){
+        // ОТПРАВКА ФАЙЛА
+        if(currentFile.size > 5*1024*1024) return alert("Файл слишком большой (макс 5 МБ)");
+        const fd = new FormData();
+        fd.append("user_id", USER_ID);
+        fd.append("name", name);
+        fd.append("file", currentFile, currentFile.name);
+
+        statusEl.textContent = "Загрузка файла...";
+        try {
+          await apiUpload("/api/wardrobe/upload", fd);
+          statusEl.textContent = "Готово — вещь добавлена";
+          wardrobePage();
+        } catch(err){
+          console.error(err);
+          statusEl.textContent = "Ошибка: " + (err.message || err);
+        }
+      } else if (url) {
+        // ОТПРАВКА ССЫЛКИ НА ФОТО
+        statusEl.textContent = "Проверка и добавление ссылки...";
+        try {
+          await apiPost("/api/wardrobe/add", { user_id: USER_ID, name, image_url: url, item_type: "url" });
+          statusEl.textContent = "Готово — вещь добавлена";
+          wardrobePage();
+        } catch(e){
+          statusEl.textContent = "Ошибка при сохранении: " + (e.message || e);
+        }
+      } else {
+        return alert("Выберите файл ИЛИ вставьте прямую ссылку на фото.");
+      }
+    });
+  }
 
     const fileEl = document.createElement("input");
     fileEl.type = "file";
