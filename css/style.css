@@ -228,3 +228,41 @@ body{
     display: block; 
     width: 100%; 
 }
+
+.palette-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70px; /* Фиксированная высота */
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.palette-swatch:hover {
+  border-color: var(--accent, #6c5ce7);
+  transform: scale(1.02);
+}
+
+/* Стиль для превью цвета (кружочек) */
+.preview-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Особый стиль для кнопки Авто */
+.auto-swatch {
+  background: linear-gradient(135deg, #333 50%, #555 50%);
+}
+.preview-auto {
+  font-weight: bold;
+  font-size: 16px;
+}
