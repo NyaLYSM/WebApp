@@ -57,40 +57,94 @@
   }
 
   function setupPalette() {
-    // 1. Загрузка сохраненной палитры или установка дефолтной
-    const savedPalette = localStorage.getItem('selectedPalette');
-    if (savedPalette) {
-        try {
-            applyPalette(JSON.parse(savedPalette));
-        } catch(e) {
-            applyPalette(PALETTES[0]); 
-        }
-    } else {
-        applyPalette(PALETTES[0]); 
-    }
-    
-    // 2. Обработчик кнопки палитры (открытие)
-    paletteBtn && paletteBtn.addEventListener("click", ()=> {
-      overlay.hidden = false;
-      overlay.ariaHidden = "false";
-      renderPalettes(); // Рендерим при открытии, чтобы видеть актуальные цвета
-    });
-
-    // 3. Обработчик кнопки "Готово" (закрытие) - ФИКС НЕЗАКРЫВАЕМОГО ОКНА
-    closeBtn && closeBtn.addEventListener("click", () => {
-      overlay.hidden = true;
-      overlay.ariaHidden = "true";
-      tg.HapticFeedback && tg.HapticFeedback.impactOccurred('light');
-    });
-
-    // 4. Закрытие при клике по фону
-    overlay && overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) {
-            overlay.hidden = true;
-            overlay.ariaHidden = "true";
-        }
-    });
+  // 1. Считываем сохраненную тему
+  const saved = localStorage.getItem("app_palette_idx");
+  
+  // Если сохранено число - применяем его, иначе (null) - авто/сброс
+  if (saved !== null) {
+    applyTheme(PALETTES[parseInt(saved)]);
+  } else {
+    // Если ничего не выбрано, применяем авто (или первую по умолчанию, если хотите)
+    // Но здесь мы просто не применяем конкретную тему, оставляя CSS по умолчанию
   }
+
+  // 2. Генерируем HTML для сетки
+  // Сначала добавляем кнопку АВТО (как отдельный прямоугольник)
+  const autoBtnHtml = `
+    <button class="palette-swatch auto-swatch" id="palette-auto-btn" aria-label="Автоматически">
+      <div class="preview-auto">A</div>
+      <span>Авто</span>
+    </button>
+  `;
+
+  // Затем генерируем остальные палитры
+  const palettesHtml = PALETTES.map((p, i) => `
+    <button class="palette-swatch" 
+            data-index="${i}" 
+            style="background: ${p.bg}; border-color: ${p.accent}; color: ${p.text}" 
+            aria-label="${p.name}">
+      <div class="preview-dot" style="background: ${p.accent}"></div>
+      <span>${p.name}</span>
+    </button>
+  `).join('');
+
+  paletteGrid.innerHTML = autoBtnHtml + palettesHtml;
+
+  // 3. Назначаем обработчики событий (через делегирование для сетки)
+  paletteGrid.addEventListener('click', (e) => {
+    // Ищем ближайшую кнопку-родителя (так как клик может быть по span или div внутри)
+    const btn = e.target.closest('.palette-swatch');
+    if (!btn) return;
+
+    if (btn.id === 'palette-auto-btn') {
+      // Логика кнопки АВТО
+      resetPalette();
+    } else {
+      // Логика цветных палитр
+      const idx = btn.dataset.index;
+      if (idx !== undefined) {
+        applyTheme(PALETTES[idx]);
+        localStorage.setItem("app_palette_idx", idx);
+      }
+    }
+    closePalette(); // Закрываем окно после выбора
+  });
+
+  // 4. Кнопки открытия и закрытия
+  paletteBtn.addEventListener('click', openPalette);
+  
+  // ВАЖНО: Добавляем обработчик для кнопки закрытия
+  const closeBtn = document.getElementById("palette-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closePalette);
+  }
+
+  // ВАЖНО: Убрали вызов openPalette(), чтобы окно не открывалось само!
+}
+
+function openPalette() {
+  overlay.hidden = false;
+  // Небольшая задержка для анимации, если есть CSS переходы
+  setTimeout(() => overlay.style.opacity = '1', 10);
+}
+
+function closePalette() {
+  overlay.hidden = true;
+  overlay.style.opacity = '0';
+}
+
+function resetPalette() {
+  // Сброс темы (Авто)
+  localStorage.removeItem("app_palette_idx");
+  
+  // Сбрасываем CSS переменные к дефолтным значениям (из style.css :root)
+  document.documentElement.style = ""; 
+  
+  // Если у вас есть перерисовка волн, вызовите её:
+  if(window.initWaves) window.initWaves(); 
+  
+  closePalette();
+}
 
   // =================================================================================
   // ДАЛЕЕ ДРУГИЕ РАЗДЕЛЫ И ОСНОВНАЯ ЛОГИКА
