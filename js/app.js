@@ -1,95 +1,157 @@
+// js/app.js
 (function(){
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  try { tg && tg.expand && tg.expand(); } catch(e){}
 
-  const tg = window.Telegram?.WebApp || null;
-  try { tg?.expand(); } catch(e){}
+  const USER_ID = (tg?.initDataUnsafe?.user?.id) || 0;
 
-  const content = document.getElementById('content');
-  const menuBtns = document.querySelectorAll('.menu .btn');
+  const content = document.getElementById("content");
+  const menuBtns = document.querySelectorAll(".menu .btn");
+  const paletteBtn = document.getElementById("palette-btn");
+  const overlay = document.getElementById("palette-overlay");
+  const paletteGrid = document.getElementById("palette-grid");
 
-  /* ===== ПАЛИТРА ===== */
-
-  const paletteBtn   = document.getElementById('palette-btn');
-  const overlay      = document.getElementById('palette-overlay');
-  const paletteGrid  = document.getElementById('palette-grid');
-  const closeBtn     = document.getElementById('palette-close');
-  const autoBtn      = document.getElementById('palette-auto');
+  const closeBtn = document.getElementById("palette-close"); 
+  const autoBtn = document.getElementById("palette-auto");
 
   const PALETTES = [
-    { bg:'#0b0b12', card:'#121216', text:'#fff', accent:'#6c5ce7', waveStart:'#6dd3ff', waveEnd:'#7b61ff' },
-    { bg:'#1a0f1f', card:'#241327', text:'#fff', accent:'#d13cff', waveStart:'#ff6fd8', waveEnd:'#b06cff' },
-    { bg:'#f0f2f5', card:'#fff', text:'#333', accent:'#4285f4', waveStart:'#89caff', waveEnd:'#4285f4' },
+    { name:"Dark Blue", bg:"#0b0b12", card:"#121216", text:"#ffffff", accent:"#6c5ce7", waveStart:"#6dd3ff", waveEnd:"#7b61ff" },
+    { name:"Purple", bg:"#1a0f1f", card:"#241327", text:"#ffffff", accent:"#d13cff", waveStart:"#ff6fd8", waveEnd:"#b06cff" },
+    { name:"Teal", bg:"#0f1a17", card:"#132421", text:"#e8fff7", accent:"#00c896", waveStart:"#00e6a8", waveEnd:"#00aaff" },
+    { name:"Orange", bg:"#1a150f", card:"#241e13", text:"#ffffff", accent:"#ff8c00", waveStart:"#ffb04f", waveEnd:"#ff6f3f" },
+    { name:"Green", bg:"#0e1a0f", card:"#122413", text:"#ffffff", accent:"#00d14b", waveStart:"#00ff96", waveEnd:"#00aa60" },
+    { name:"Light Mode", bg:"#f0f2f5", card:"#ffffff", text:"#333", accent:"#4285f4", waveStart:"#89caff", waveEnd:"#4285f4" },
   ];
 
-  function applyPalette(p){
-    const s = document.documentElement.style;
-    s.setProperty('--bg',p.bg);
-    s.setProperty('--card',p.card);
-    s.setProperty('--text',p.text);
-    s.setProperty('--accent',p.accent);
-    s.setProperty('--wave-start',p.waveStart);
-    s.setProperty('--wave-end',p.waveEnd);
-    localStorage.setItem('palette', JSON.stringify(p));
-    window.updateWavesColors?.();
+  function openPalette() {
+    if(!overlay) return;
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
   }
 
-  function resetPalette(){
-    localStorage.removeItem('palette');
-    ['--bg','--card','--text','--accent','--wave-start','--wave-end']
-      .forEach(v => document.documentElement.style.removeProperty(v));
-    window.updateWavesColors?.();
+  function closePalette() {
+    if(!overlay) return;
+    overlay.setAttribute('aria-hidden', 'true');
     overlay.hidden = true;
   }
 
-  function initPalette(){
-    overlay.hidden = true;
-
-    const saved = localStorage.getItem('palette');
-    if(saved) applyPalette(JSON.parse(saved));
-
-    paletteGrid.innerHTML = PALETTES.map((p,i)=>`
-      <div class="palette-swatch" data-i="${i}"
-        style="background:linear-gradient(135deg,${p.bg},${p.accent})">
-      </div>
-    `).join('');
-
-    paletteGrid.onclick = e=>{
-      const el = e.target.closest('.palette-swatch');
-      if(!el) return;
-      applyPalette(PALETTES[el.dataset.i]);
-      overlay.hidden = true;
-    };
-
-    paletteBtn.onclick = ()=> overlay.hidden = false;
-    closeBtn.onclick   = ()=> overlay.hidden = true;
-    autoBtn.onclick    = resetPalette;
-
-    overlay.onclick = e=>{
-      if(e.target === overlay) overlay.hidden = true;
-    };
+  function applyPalette(palette) {
+    const root = document.documentElement.style;
+    root.setProperty('--bg', palette.bg);
+    root.setProperty('--card', palette.card);
+    root.setProperty('--text', palette.text);
+    root.setProperty('--accent', palette.accent);
+    root.setProperty('--wave-start', palette.waveStart);
+    root.setProperty('--wave-end', palette.waveEnd);
+    localStorage.setItem('selectedPalette', JSON.stringify(palette));
+    if(window.updateWavesColors) window.updateWavesColors();
   }
 
-  /* ===== НАВИГАЦИЯ ===== */
-
-  function loadSection(name){
-    menuBtns.forEach(b=>b.classList.remove('active'));
-    document.querySelector(`[data-section="${name}"]`)?.classList.add('active');
-    content.innerHTML = `<h2>${name}</h2>`;
+  function resetPalette() {
+    localStorage.removeItem("selectedPalette");
+    document.documentElement.style.cssText = "";
+    if(window.updateWavesColors) window.updateWavesColors();
+    closePalette();
   }
 
-  function initNav(){
-    menuBtns.forEach(btn=>{
-      btn.onclick = ()=> loadSection(btn.dataset.section);
+  function setupPalette() {
+    const saved = localStorage.getItem('selectedPalette');
+    if (saved) {
+      try { applyPalette(JSON.parse(saved)); } catch(e){}
+    }
+
+    if (paletteGrid) {
+      paletteGrid.innerHTML = PALETTES.map((p, i) => `
+        <div class="palette-swatch"
+             data-index="${i}"
+             style="background: linear-gradient(135deg, ${p.bg} 0%, ${p.accent} 100%); cursor: pointer;"
+             title="${p.name}">
+        </div>
+      `).join('');
+
+      paletteGrid.addEventListener('click', (e) => {
+        const swatch = e.target.closest('.palette-swatch');
+        if (swatch) {
+          applyPalette(PALETTES[swatch.dataset.index]);
+          closePalette();
+        }
+      });
+    }
+
+    paletteBtn?.addEventListener('click', openPalette);
+    autoBtn?.addEventListener('click', resetPalette);
+    closeBtn?.addEventListener('click', closePalette);
+
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) closePalette();
     });
-    loadSection('wardrobe');
+
+    closePalette();
   }
 
-  /* ===== START ===== */
+  function loadSection(sectionName) {
+    menuBtns.forEach(btn => btn.classList.remove('active'));
 
-  function start(){
-    initPalette();
-    initNav();
+    switch(sectionName) {
+      case 'populate': populatePage(); break;
+      case 'looks': looksPage(); break;
+      case 'profile': profilePage(); break;
+      default: wardrobePage(); break;
+    }
+
+    document.querySelector(`[data-section="${sectionName}"]`)?.classList.add('active');
+    window.location.hash = sectionName;
   }
 
-  start();
+  async function populatePage() {
+    content.innerHTML = `<h2>Добавить вещь</h2>`;
+  }
+
+  async function wardrobePage() {
+    content.innerHTML = `<h2>Ваш гардероб</h2>`;
+  }
+
+  async function looksPage() {
+    content.innerHTML = `<h2>Ваши образы</h2>`;
+  }
+
+  async function profilePage() {
+    content.innerHTML = `<h2>Профиль</h2>`;
+  }
+
+  async function authenticate() {
+    const storedToken = localStorage.getItem('auth_token');
+    if (storedToken) {
+      window.setAuthToken?.(storedToken);
+      return true;
+    }
+
+    if (!tg || !tg.initData) {
+      content.innerHTML = `<h2>Ошибка</h2><p>Запуск вне Telegram</p>`;
+      return false;
+    }
+
+    try {
+      const res = await window.apiPost('/api/tg_auth/exchange', { init_data: tg.initData });
+      localStorage.setItem('auth_token', res.access_token);
+      window.setAuthToken?.(res.access_token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function main() {
+    setupPalette();
+
+    menuBtns.forEach(btn => {
+      btn.addEventListener("click", () => loadSection(btn.dataset.section));
+    });
+
+    loadSection(location.hash.slice(1) || 'wardrobe');
+    tg?.MainButton?.hide();
+  }
+
+  authenticate().then(ok => ok && main());
 
 })();
