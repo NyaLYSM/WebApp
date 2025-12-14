@@ -1,9 +1,12 @@
 // js/api.js
 
 (function(){
+  // Используем BACKEND_URL, который определен в .env и, возможно, передан
   window.BACKEND_URL = window.BACKEND_URL || "https://stylist-backend-h5jl.onrender.com";
 
+  // ===========================================
   // НОВЫЕ ФУНКЦИИ: Управление токеном
+  // ===========================================
   window.getToken = function() {
     return localStorage.getItem('access_token');
   };
@@ -19,81 +22,89 @@
     const headers = {};
     const token = window.getToken();
     
-    // КРИТИЧЕСКИ ВАЖНАЯ ПРОВЕРКА И ДОБАВЛЕНИЕ:
+    // КРИТИЧЕСКИ ВАЖНО: Добавление заголовка авторизации
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     if (isJson) {
-      headers['Content-Type'] = 'application/json';
+      // Content-Type: application/json нужен только для JSON-тела
+      headers['Content-Type'] = 'application/json'; 
     }
     return headers;
   }
+  
+  // Вспомогательная функция для обработки 401
+  function handleApiError(res) {
+    if (res.status === 401) {
+      window.clearToken(); // Сбрасываем недействительный токен
+      throw new Error("401 Unauthorized. Токен недействителен или просрочен."); 
+    }
+    // Для других ошибок
+    if(!res.ok) {
+      return res.text().then(txt => {
+          throw new Error("API error: " + res.status + " - " + txt);
+      });
+    }
+    return res;
+  }
 
+  // ===========================================
   // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ===========================================
   window.apiGet = async function(path, params) {
     params = params || {};
+    // Теперь user_id берется из JWT, удаляем его из params
+    if(params.user_id) delete params.user_id; 
+    
     const qs = new URLSearchParams(params).toString();
     const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
     
-    // ДОБАВЛЕНЫ ЗАГОЛОВКИ!
     const res = await fetch(url, {
-      headers: getHeaders(false) // GET запросы не всегда требуют Content-Type: application/json
+      headers: getHeaders(false) 
     });
     
-    if(res.status === 401) {
-      window.clearToken(); // Если 401, очищаем токен и предлагаем перелогиниться
-      throw new Error("401 Unauthorized. Токен недействителен или просрочен.");
-    }
-
-    if(!res.ok) {
-      const txt = await res.text();
-      throw new Error("API GET error: " + res.status + " - " + txt);
-    }
+    await handleApiError(res);
     return await res.json();
   };
 
+  // ===========================================
   // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ===========================================
   window.apiPost = async function(path, payload) {
     const url = window.BACKEND_URL + path;
+    
+    // Теперь user_id берется из JWT, удаляем его из payload
+    if(payload && payload.user_id) delete payload.user_id;
+
     const res = await fetch(url, {
       method:"POST",
-      headers: getHeaders(true), // Content-Type: application/json включен
+      // Используем getHeaders(true) для JSON-запросов
+      headers: getHeaders(true), 
       body: JSON.stringify(payload || {})
     });
-
-    if(res.status === 401) {
-      window.clearToken();
-      throw new Error("401 Unauthorized. Токен недействителен или просрочен.");
-    }
     
-    if(!res.ok){
-      const txt = await res.text();
-      throw new Error("API POST error: " + res.status + " - " + txt);
-    }
+    await handleApiError(res);
     return await res.json();
   };
 
+  // ===========================================
   // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ===========================================
   window.apiUpload = async function(path, formData) {
     const url = window.BACKEND_URL + path;
     
-    // Для FormData headers: {'Content-Type': 'multipart/form-data'} не нужен, но 
-    // нужен Authorization.
+    // Теперь user_id берется из JWT, удаляем его из FormData
+    formData.delete("user_id");
+
     const res = await fetch(url, {
       method: "POST",
-      headers: getHeaders(false), // Не передаём Content-Type
+      // При работе с FormData Content-Type не нужен
+      headers: getHeaders(false), 
       body: formData
     });
     
-    if(res.status === 401) {
-      window.clearToken();
-      throw new Error("401 Unauthorized. Токен недействителен или просрочен.");
-    }
-    
-    if(!res.ok) {
-      const txt = await res.text();
-      throw new Error("API UPLOAD error: " + res.status + " - " + txt);
-    }
+    await handleApiError(res);
     return await res.json();
   };
+
 })();
