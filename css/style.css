@@ -1,125 +1,272 @@
 :root{
+  --radius:12px;
+  --transition:0.18s ease;
   --bg:#0b0b12;
   --card:#121216;
   --text:#fff;
+  --muted:rgba(255,255,255,0.72);
   --accent:#6c5ce7;
   --wave-start:#6dd3ff;
   --wave-end:#7b61ff;
-  --radius:12px;
+  --container-max:480px;
 }
 
-*{ box-sizing:border-box }
-html,body{ height:100% }
-
+/* Reset */
+*{box-sizing:border-box}
+html,body{height:100%}
 body{
   margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   background:var(--bg);
   color:var(--text);
-  font-family:Inter, system-ui, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
 
+/* Waves canvas */
 #bgCanvas{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
+  position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; display:block;
 }
 
-.container{
-  position:relative;
-  z-index:5;
-  max-width:480px;
-  margin:20px auto;
-  padding:16px;
-}
+/* container */
+.container{ position:relative; z-index:5; max-width:var(--container-max); margin:22px auto; padding:16px; }
 
-.top-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:16px;
-}
+/* top row */
+.top-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
 
-.title{
-  margin:0;
-  font-size:24px;
-}
+/* title */
+.title{ margin:0; font-size:24px; font-weight:700; }
 
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:16px;
-  box-shadow:0 12px 36px rgba(0,0,0,.3);
-}
+/* card */
+.card{ padding:16px; border-radius:var(--radius); background:var(--card); box-shadow:0 12px 36px rgba(0,0,0,0.3); }
 
-.menu{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-bottom:16px;
-}
+/* menu - главное меню. */
+.menu{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
 
+/* buttons - основные кнопки */
 .btn{
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  /* ИСПОЛЬЗУЕМ АКЦЕНТНЫЙ ФОН ДЛЯ ГЛАВНЫХ КНОПОК */
   background:var(--accent);
-  border:none;
-  border-radius:12px;
-  padding:12px;
-  color:#fff;
-  cursor:pointer;
-}
-
-.small-btn{
-  background:var(--card);
   color:var(--text);
-  border:none;
-  border-radius:10px;
+  box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 60%, black);
+  transition:transform var(--transition), opacity var(--transition);
+  min-height:50px; /* Установленный средний размер */
+  font-size:15px;
+  text-align:center;
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.btn:active{ transform:scale(0.99) translateY(1px); }
+
+/* menu buttons style override: делаем их одинаковыми */
+.menu .btn { 
+    min-height: 50px; 
+    font-size: 15px; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* small button - для кнопок-иконок и второстепенных действий */
+.small-btn{
   padding:8px 12px;
-  cursor:pointer;
-}
-
-/* ===== ПАЛИТРА ===== */
-
-.palette-overlay{
-  position:fixed;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,.5);
-  z-index:10000;
-}
-
-/* 🔥 ГЛАВНЫЙ ФИКС */
-.palette-overlay[hidden]{
-  display:none !important;
-}
-
-.palette-card{
-  width:min(420px, 100%);
-  background:var(--card);
-  border-radius:12px;
-  padding:12px;
-}
-
-.palette-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-  margin:12px 0;
-}
-
-.palette-swatch{
-  height:60px;
   border-radius:10px;
+  border:none;
   cursor:pointer;
-  border:2px solid transparent;
+  background:var(--card); 
+  color:var(--text);
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transition:transform var(--transition);
+}
+.small-btn.delete { background: #d32f2f; color: #fff; } 
+.small-btn:active{ transform:translateY(1px); }
+
+/* input */
+.input{
+  display:block;
+  width:100%;
+  padding:10px 12px;
+  margin-bottom:12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.06);
+  background:color-mix(in srgb, var(--card) 92%, transparent 8%);
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  transition:border var(--transition);
+}
+.input:focus{ border-color:var(--accent); }
+.input::placeholder {
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.input[disabled] {
+    opacity: 0.7;
+    cursor: default;
 }
 
-.palette-swatch:hover{
-  border-color:var(--accent);
+/* candidate image */
+.candidate-img{ width:100%; border-radius:12px; margin-bottom:12px; display:block; cursor:pointer; object-fit:cover; }
+
+/* item card */
+.item-card{ display:block; border-radius:10px; padding:10px; background: color-mix(in srgb, var(--card) 95%, black 4%); margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
+.item-card img{ width:100%; border-radius:8px; margin-bottom:8px; object-fit:cover; }
+
+/* action row */
+.row{ display:flex; gap:8px; align-items:center; }
+
+/* palette overlay */
+.palette-overlay{ 
+    position:fixed; 
+    inset:0; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    background:rgba(0,0,0,0.48); 
+    z-index:10000; 
+}
+.palette-card{ 
+    width:min(420px, calc(100% - 32px)); 
+    background:var(--card); 
+    border-radius:12px; 
+    padding:12px; 
+    box-shadow:0 18px 48px rgba(0,0,0,0.45); 
+    color:var(--text); 
+}
+.palette-grid{ 
+    display:grid; 
+    grid-template-columns:repeat(3,1fr); 
+    gap:8px; 
+    margin-top:12px; 
+    margin-bottom: 12px; /* Добавим отступ */
+}
+/* *** Исправлено: Стили для отображения цветов палитры *** */
+.palette-swatch{ 
+    display:block; 
+    padding:10px; 
+    border-radius:8px; 
+    cursor:pointer; 
+    text-align:center; 
+    font-size:14px;
+    height: 40px;
+    border: 2px solid transparent;
+    transition: border-color var(--transition);
+}
+.palette-swatch:hover { border-color: var(--accent); }
+
+.palette-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
 }
 
-.palette-actions{
-  display:flex;
-  justify-content:space-between;
+
+/* NEW STYLES FOR FILE UPLOAD FORM */
+
+.input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px; 
+}
+.input-file-wrap {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+}
+/* Стили для кнопки "Выбрать файл" */
+.file-select-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px; 
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform var(--transition);
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.file-select-btn:active { transform: translateY(1px); }
+
+/* Поле, которое имитирует инпут, но используется для отображения имени файла/URL */
+.input-file-wrap .input {
+    margin-bottom: 0; 
+}
+
+.file-clear-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 10;
+    padding: 4px;
+    line-height: 1;
+}
+
+/* Кнопка "Добавить в гардероб" должна быть 100% ширины */
+#populate-body .btn { 
+    margin-top: 8px; 
+    display: block; 
+    width: 100%; 
+}
+
+.palette-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70px; /* Фиксированная высота */
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.palette-swatch:hover {
+  border-color: var(--accent, #6c5ce7);
+  transform: scale(1.02);
+}
+
+/* Стиль для превью цвета (кружочек) */
+.preview-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Особый стиль для кнопки Авто */
+.auto-swatch {
+  background: linear-gradient(135deg, #333 50%, #555 50%);
+}
+.preview-auto {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.palette-overlay[hidden] {
+    display: none !important;
 }
