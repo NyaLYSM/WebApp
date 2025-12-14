@@ -4,10 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ИИ Стилист — WebApp</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=3"> 
+  <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
+
   <canvas id="bgCanvas" aria-hidden="true"></canvas>
 
   <div class="container" role="main">
@@ -16,29 +18,32 @@
       <button id="palette-btn" class="small-btn" aria-label="Палитра">🎨</button>
     </div>
 
-	<nav class="menu" role="navigation" aria-label="Меню">
-      <button class="btn" data-section="populate">➕ Добавить вещь</button>
+    <nav class="menu">
+      <button class="btn" data-section="populate">➕ Добавить</button>
       <button class="btn" data-section="wardrobe">👗 Гардероб</button>
       <button class="btn" data-section="looks">✨ Образы</button>
       <button class="btn" data-section="profile">⚙️ Профиль</button>
     </nav>
 
-    <main id="content" class="card" aria-live="polite"></main>
+    <main id="content" class="card"></main>
   </div>
 
-  <div id="palette-overlay" class="palette-overlay" hidden aria-hidden="true">
-    <div class="palette-card" role="dialog" aria-modal="true" aria-label="Выбор палитры">
-      <h3>Выбрать палитру</h3>
-      <div class="palette-grid" id="palette-grid" role="list"></div>
+  <!-- ПАЛИТРА -->
+  <div id="palette-overlay" class="palette-overlay" hidden>
+    <div class="palette-card">
+      <h3>Выбор палитры</h3>
+
+      <div id="palette-grid" class="palette-grid"></div>
+
       <div class="palette-actions">
-        <button id="palette-auto" class="small-btn">Авто (по теме)</button>
+        <button id="palette-auto" class="small-btn">Авто</button>
         <button id="palette-close" class="small-btn">Закрыть</button>
       </div>
     </div>
   </div>
-  
-  <script src="js/api.js?v=3"></script>
-  <script src="js/waves.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+
+  <script src="js/api.js"></script>
+  <script src="js/waves.js"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>
