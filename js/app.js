@@ -23,105 +23,130 @@
   ];
 
   // =================================================================================
-  // ЛОГИКА ПАЛИТРЫ (ИСПРАВЛЕНИЕ ВСЕХ 3 ОШИБОК)
+  // ЛОГИКА ПАЛИТРЫ
   // =================================================================================
 
-  function resetPalette() {
-  localStorage.removeItem("selectedPalette"); // или "app_palette_idx" смотря что использовали
-  // Сбрасываем CSS переменные, удаляя инлайн-стили с html
-  document.documentElement.style.cssText = ""; 
-  // Перезапуск волн
-  if(window.updateWavesColors) window.updateWavesColors();
-  closePalette();
-}
+  function setupPalette() {
+  console.log("Инициализация палитры...");
 
-// Хелпер для применения темы
-function applyPalette(palette) {
-  const root = document.documentElement.style;
-  root.setProperty('--bg', palette.bg);
-  root.setProperty('--card', palette.card);
-  root.setProperty('--text', palette.text);
-  root.setProperty('--accent', palette.accent);
-  root.setProperty('--wave-start', palette.waveStart);
-  root.setProperty('--wave-end', palette.waveEnd);
-  
-  localStorage.setItem('selectedPalette', JSON.stringify(palette));
-  
-  if(window.updateWavesColors) window.updateWavesColors();
-}
+  // 1. ЖЕСТКО получаем элементы по правильным ID из HTML
+  const overlay = document.getElementById("palette-overlay");
+  const grid = document.getElementById("palette-grid");
+  const openBtn = document.getElementById("palette-btn"); // Кнопка 🎨 в шапке
+  const closeBtn = document.getElementById("palette-close"); // Кнопка Закрыть
+  const autoBtn = document.getElementById("palette-auto"); // Кнопка Авто
 
-function openPalette() {
-  overlay.hidden = false;
-  // Небольшая задержка для плавности, если есть CSS-транзишн
-  setTimeout(() => overlay.setAttribute('aria-hidden', 'false'), 10);
-}
-
-function closePalette() {
-  overlay.hidden = true;
-  overlay.setAttribute('aria-hidden', 'true');
-}
-
-function setupPalette() {
-  // 1. Применяем сохраненную тему при старте
-  const saved = localStorage.getItem('selectedPalette');
-  if (saved) {
-    try {
-      applyPalette(JSON.parse(saved));
-    } catch(e) {
-      console.error("Ошибка парсинга темы", e);
-    }
+  // Если оверлея нет, выходим (защита от ошибок)
+  if (!overlay) {
+    console.error("Ошибка: Не найден palette-overlay в HTML");
+    return;
   }
 
-  // 2. Генерируем ТОЛЬКО цветные прямоугольники в сетку
-  if (paletteGrid) {
-    paletteGrid.innerHTML = PALETTES.map((p, i) => `
+  // --- Локальные функции управления ---
+  
+  function openOverlay() {
+    overlay.hidden = false;
+    // Небольшой тайм-аут для работы CSS transition (плавность)
+    setTimeout(() => {
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.add('open'); // Добавляем класс для CSS анимаций, если они есть
+    }, 10);
+  }
+
+  function closeOverlay() {
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.classList.remove('open');
+    // Ждем окончания анимации (300мс) перед скрытием
+    setTimeout(() => {
+        overlay.hidden = true;
+    }, 300);
+  }
+
+  function applyTheme(palette) {
+    const root = document.documentElement.style;
+    root.setProperty('--bg', palette.bg);
+    root.setProperty('--card', palette.card);
+    root.setProperty('--text', palette.text);
+    root.setProperty('--accent', palette.accent);
+    root.setProperty('--wave-start', palette.waveStart);
+    root.setProperty('--wave-end', palette.waveEnd);
+    
+    localStorage.setItem('selectedPalette', JSON.stringify(palette));
+    if(window.updateWavesColors) window.updateWavesColors();
+  }
+
+  function resetTheme() {
+    localStorage.removeItem("selectedPalette");
+    document.documentElement.style.cssText = ""; // Сброс инлайн-стилей
+    if(window.updateWavesColors) window.updateWavesColors();
+    closeOverlay();
+  }
+
+  // --- 2. Генерация прямоугольников (СЕТКА) ---
+  if (grid) {
+    grid.innerHTML = PALETTES.map((p, i) => `
       <div class="palette-swatch" 
            data-index="${i}" 
-           style="background: linear-gradient(135deg, ${p.bg} 0%, ${p.accent} 100%);" 
+           style="background: linear-gradient(135deg, ${p.bg} 0%, ${p.accent} 100%); cursor: pointer;" 
            title="${p.name}">
-           </div>
+      </div>
     `).join('');
-  
-    // Обработчик кликов по палитрам
-    paletteGrid.addEventListener('click', (e) => {
+
+    // Делегирование клика по сетке (выбор цвета)
+    grid.onclick = (e) => {
       const swatch = e.target.closest('.palette-swatch');
       if (swatch) {
         const idx = swatch.dataset.index;
-        applyPalette(PALETTES[idx]);
-        closePalette();
+        applyTheme(PALETTES[idx]);
+        closeOverlay();
       }
-    });
+    };
   }
 
-  // 3. Обработчики кнопок (используем существующие ID из HTML)
-  
-  // Кнопка открытия (в шапке)
-  if (paletteBtn) {
-    paletteBtn.addEventListener('click', openPalette);
+  // --- 3. Навешивание событий (КНОПКИ) ---
+
+  // Кнопка открытия 🎨
+  if (openBtn) {
+    openBtn.onclick = (e) => {
+        e.preventDefault();
+        openOverlay();
+    };
+  } else {
+    console.warn("Кнопка открытия palette-btn не найдена");
   }
 
-  // Кнопка "Авто (по теме)" - это #palette-auto в index.html
-  const autoBtn = document.getElementById("palette-auto");
+  // Кнопка Закрыть
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+        e.preventDefault(); // Важно предотвратить стандартное поведение
+        closeOverlay();
+    };
+  } else {
+    console.error("Кнопка закрытия palette-close не найдена (проверьте ID в HTML)");
+  }
+
+  // Кнопка Авто
   if (autoBtn) {
-    autoBtn.addEventListener('click', resetPalette);
+    autoBtn.onclick = (e) => {
+        e.preventDefault();
+        resetTheme();
+    };
   }
 
-  // Кнопка "Закрыть" - это #palette-close в index.html (не palette-close-btn!)
-  // В index.html ID = "palette-close"
-  const closeBtnOld = document.getElementById("palette-close");
-  const closeBtnNew = document.getElementById("palette-close-btn"); // на всякий случай проверяем оба варианта
-  
-  const actualCloseBtn = closeBtnOld || closeBtnNew;
-  
-  if (actualCloseBtn) {
-    actualCloseBtn.addEventListener('click', closePalette);
-  }
+  // Клик по фону (за границей карточки)
+  overlay.onclick = (e) => {
+    // Если кликнули прямо по оверлею (а не по карточке внутри)
+    if (e.target === overlay) {
+      closeOverlay();
+    }
+  };
 
-  // Закрытие по клику на фон
-  if (overlay) {
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closePalette();
-    });
+  // --- 4. Применение сохраненной темы при старте ---
+  const saved = localStorage.getItem('selectedPalette');
+  if (saved) {
+    try {
+      applyTheme(JSON.parse(saved));
+    } catch(e) { console.error(e); }
   }
 }
 
