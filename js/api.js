@@ -34,27 +34,25 @@
   }
   
   // Вспомогательная функция для обработки 401
-  function handleApiError(res) {
+  async function handleApiError(res) {
     if (res.status === 401) {
       window.clearToken(); // Сбрасываем недействительный токен
-      throw new Error("401 Unauthorized. Токен недействителен или просрочен."); 
+      // Выбрасываем ошибку, чтобы остановить дальнейшую обработку
+      throw new Error("401 Unauthorized. Сессия истекла. Пожалуйста, перезапустите бота."); 
     }
     // Для других ошибок
     if(!res.ok) {
-      return res.text().then(txt => {
-          throw new Error("API error: " + res.status + " - " + txt);
-      });
+      const txt = await res.text();
+      throw new Error("API error: " + res.status + " - " + txt);
     }
     return res;
   }
 
   // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
   // ===========================================
   window.apiGet = async function(path, params) {
     params = params || {};
-    // Теперь user_id берется из JWT, удаляем его из params
-    if(params.user_id) delete params.user_id; 
     
     const qs = new URLSearchParams(params).toString();
     const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
@@ -68,14 +66,11 @@
   };
 
   // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
   // ===========================================
   window.apiPost = async function(path, payload) {
     const url = window.BACKEND_URL + path;
     
-    // Теперь user_id берется из JWT, удаляем его из payload
-    if(payload && payload.user_id) delete payload.user_id;
-
     const res = await fetch(url, {
       method:"POST",
       // Используем getHeaders(true) для JSON-запросов
@@ -88,14 +83,14 @@
   };
 
   // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации
+  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
   // ===========================================
   window.apiUpload = async function(path, formData) {
     const url = window.BACKEND_URL + path;
     
-    // Теперь user_id берется из JWT, удаляем его из FormData
-    formData.delete("user_id");
-
+    // FormData не может содержать user_id, его удаляет api.js, 
+    // но в app.js лучше тоже не добавлять.
+    
     const res = await fetch(url, {
       method: "POST",
       // При работе с FormData Content-Type не нужен
