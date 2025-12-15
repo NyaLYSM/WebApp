@@ -27,7 +27,7 @@
   ];
 
   // =================================================================================
-  // ЛОГИКА ПАЛИТРЫ (ИСПРАВЛЕНО)
+  // ЛОГИКА ПАЛИТРЫ
   // =================================================================================
 
   function openPalette() {
@@ -129,7 +129,7 @@
   }
 
   // =================================================================================
-  // ЛОГИКА НАВИГАЦИИ (ПРОВЕРКА РАБОТОСПОСОБНОСТИ ДРУГИХ КНОПОК)
+  // ЛОГИКА НАВИГАЦИИ
   // =================================================================================
   
   function loadSection(sectionName) {
@@ -159,7 +159,7 @@
   }
   
   // =================================================================================
-  // ФУНКЦИИ СТРАНИЦ (ВОССТАНОВЛЕНЫ)
+  // ФУНКЦИИ СТРАНИЦ
   // =================================================================================
 
   // Стаб для populatePage - Загрузка вещи
@@ -191,7 +191,6 @@
     `;
 
     // Здесь должна быть логика работы формы, как в вашем исходном коде
-    // (обработчики кнопок, загрузка файла, отправка на API)
     
     const fileInput = document.getElementById("item-file");
     const fileTriggerBtn = document.getElementById("file-trigger-btn");
@@ -301,12 +300,13 @@
     }
   }
   
-  // Стаб для authenticate - Логика авторизации
+  // =================================================================================
+  // КРИТИЧЕСКИЙ ФИКС: ЛОГИКА АВТОРИЗАЦИИ
+  // =================================================================================
   async function authenticate() {
-      // Имитация логики, которая была в ваших сниппетах
-      const storedToken = localStorage.getItem('auth_token');
+      // ИСПОЛЬЗУЕМ ФУНКЦИЮ getToken(), КОТОРАЯ ИЩЕТ 'access_token'
+      const storedToken = window.getToken(); 
       if (storedToken) {
-          window.setAuthToken && window.setAuthToken(storedToken);
           return true;
       }
       
@@ -317,10 +317,10 @@
       
       try {
           const res = await window.apiPost('/api/tg_auth/exchange', { init_data: tg.initData });
-          const auth_token = res.access_token;
-          localStorage.setItem('auth_token', auth_token);
+          const access_token = res.access_token;
           
-          window.setAuthToken && window.setAuthToken(auth_token); 
+          // ИСПОЛЬЗУЕМ ПРАВИЛЬНУЮ ФУНКЦИЮ setToken(token) ИЗ api.js
+          window.setToken(access_token); 
           return true;
 
       } catch (e) {
@@ -341,7 +341,6 @@
     setupPalette();
 
     // 2. Настройка навигации
-    // ФИКС: Эта часть гарантирует, что кнопки меню работают!
     menuBtns.forEach(btn => {
       btn.addEventListener("click", (e) => loadSection(e.currentTarget.dataset.section));
     });
