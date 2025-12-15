@@ -163,66 +163,227 @@
   // =================================================================================
 
   // Стаб для populatePage - Загрузка вещи
-  function populatePage() {
+  Приношу извинения за ошибку. Вы правы, в предоставленном мне коде app.js не было функции addItemPage, а был старый стаб populatePage.
+
+В предыдущем запросе я использовал ваш код для populatePage и логику, которую вы хотели реализовать, но я назвал новую функцию addItemPage.
+
+Давайте исправим это:
+
+Я переименую функцию populatePage в addItemPage в файле app.js, чтобы соответствовать вашему намерению и логике переключения вкладок.
+
+Я добавлю полный и исправленный блок addItemPage с функциональностью двух вкладок ("Маркетплейс" и "Ручное") в app.js.
+
+Я добавлю необходимые стили для переключателя в style.css.
+
+Я добавлю два новых роута на бэкенде в wardrobe.py для обработки URL, так как фронтенд теперь их отправляет.
+
+Я внесу критическое исправление в profile.py, заменив несуществующее поле full_name на first_name и last_name, чтобы страница профиля не падала.
+
+1. Файл js/app.js (Обновленная функция addItemPage)
+Этот блок кода включает:
+
+Переименование старой populatePage в addItemPage.
+
+HTML-разметку с двумя вкладками ("Маркетплейс" и "Ручное").
+
+Логику переключения между вкладками.
+
+Логику отправки данных на новые бэкенд-роуты: /api/wardrobe/add-marketplace и /api/wardrobe/add-url.
+
+JavaScript
+
+// js/app.js (Полный блок функции addItemPage)
+
+// Стаб для addItemPage - Страница добавления вещи
+async function addItemPage() {
     let currentFile = null;
     content.innerHTML = `
-        <div id="populate-body">
-            <h2>Добавить вещь</h2>
-            <p>Загрузите фото или укажите ссылку на товар.</p>
+        <h2>Добавить в Гардероб</h2>
+        
+        <div class="mode-switch">
+            <button class="small-btn active" id="mode-marketplace">Маркетплейс</button>
+            <button class="small-btn" id="mode-manual">Ручное</button>
+        </div>
 
-            <form id="add-item-form">
-                <div class="input-group">
-                    <div class="input-file-wrap">
-                        <input type="text" id="item-url" class="input" placeholder="URL фото или товара" />
-                        <button type="button" class="file-clear-btn" aria-label="Очистить URL">&times;</button>
-                    </div>
-                    <button type="button" class="file-select-btn" id="file-trigger-btn">
-                        <span id="file-icon">🖼️</span>
-                    </button>
+        <form id="add-item-form">
+            <div id="mode-marketplace-content" class="add-content">
+                <p class="muted-text">Введите название предмета и ссылку на товар (Wildberries, Ozon и т.п.).</p>
+                <div class="input-wrap">
+                    <input type="text" id="marketplace-name" class="input" placeholder="Название (например, 'Летнее платье')" required>
+                </div>
+                <div class="input-wrap">
+                    <input type="url" id="marketplace-url" class="input" placeholder="Ссылка на товар (URL)" required>
+                </div>
+                <button type="submit" class="btn primary" data-mode="marketplace">Добавить из Маркетплейса</button>
+            </div>
+
+            <div id="mode-manual-content" class="add-content hidden">
+                <p class="muted-text">Введите название и добавьте ссылку на фото или загрузите файл.</p>
+                <div class="input-wrap">
+                    <input type="text" id="manual-name" class="input" placeholder="Название (например, 'Мои любимые джинсы')" required>
                 </div>
                 
-                <input type="file" id="item-file" accept="image/*" hidden />
-                <input type="text" id="item-name" class="input" placeholder="Название (например: Голубая рубашка)" required />
+                <div class="input-group">
+                    <div class="input-file-wrap">
+                        <input type="url" id="manual-url" class="input file-input-like" placeholder="Ссылка на фото (URL)">
+                        <button type="button" class="file-clear-btn hidden" id="file-clear-manual" aria-label="Очистить">&times;</button>
+                    </div>
+                    <button type="button" class="file-select-btn" id="file-btn-manual">
+                        <span id="file-icon">📸</span>
+                    </button>
+                </div>
+                <input type="file" id="manual-file" accept="image/*" class="hidden"> 
                 
-                <button type="submit" id="send-btn" class="btn primary">Добавить в гардероб</button>
-                <p id="status-message" class="muted-text" style="margin-top: 10px; min-height: 1.2em;"></p>
-            </form>
-        </div>
+                <button type="submit" class="btn primary" data-mode="manual">Добавить в Гардероб</button>
+            </div>
+            
+            <p id="status-message" class="muted-text" style="margin-top: 10px; min-height: 1.2em;"></p>
+        </form>
     `;
 
-    // Здесь должна быть логика работы формы, как в вашем исходном коде
-    
-    const fileInput = document.getElementById("item-file");
-    const fileTriggerBtn = document.getElementById("file-trigger-btn");
-    const urlEl = document.getElementById("item-url");
-    const clearUrlBtn = document.querySelector(".file-clear-btn");
-    const form = document.getElementById("add-item-form");
-    const nameEl = document.getElementById("item-name");
-    const sendBtn = document.getElementById("send-btn");
     const statusEl = document.getElementById("status-message");
 
-    fileTriggerBtn.addEventListener("click", () => fileInput.click());
+    // --- Логика переключения вкладок ---
+    const marketplaceBtn = document.getElementById('mode-marketplace');
+    const manualBtn = document.getElementById('mode-manual');
+    const marketplaceContent = document.getElementById('mode-marketplace-content');
+    const manualContent = document.getElementById('mode-manual-content');
+
+    const switchMode = (mode) => {
+        if (mode === 'marketplace') {
+            marketplaceBtn.classList.add('active');
+            manualBtn.classList.remove('active');
+            marketplaceContent.classList.remove('hidden');
+            manualContent.classList.add('hidden');
+        } else {
+            manualBtn.classList.add('active');
+            marketplaceBtn.classList.remove('active');
+            manualContent.classList.remove('hidden');
+            marketplaceContent.classList.add('hidden');
+        }
+        // Очищаем статус при переключении
+        statusEl.textContent = '';
+        // Сброс ручного ввода при переключении
+        fileClearManual.click(); 
+    };
     
-    fileInput.addEventListener("change", (e) => {
-        if(e.target.files.length > 0) {
+    marketplaceBtn.addEventListener('click', () => switchMode('marketplace'));
+    manualBtn.addEventListener('click', () => switchMode('manual'));
+
+    // --- Логика загрузки файла и очистки (для Manual Mode) ---
+    const manualUrlInput = document.getElementById('manual-url');
+    const manualFileInput = document.getElementById('manual-file');
+    const fileBtnManual = document.getElementById('file-btn-manual');
+    const fileClearManual = document.getElementById('file-clear-manual');
+    
+    fileBtnManual.addEventListener('click', () => manualFileInput.click());
+    
+    manualFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
             currentFile = e.target.files[0];
-            urlEl.value = currentFile.name;
-            urlEl.disabled = true;
-            clearUrlBtn.style.display = 'block';
+            manualUrlInput.value = currentFile.name;
+            manualUrlInput.disabled = true;
+            fileClearManual.classList.remove('hidden');
+        } else {
+            currentFile = null;
+            manualUrlInput.disabled = false;
+            manualUrlInput.placeholder = "Ссылка на фото (URL)";
+            fileClearManual.classList.add('hidden');
         }
     });
-
-    clearUrlBtn.addEventListener("click", () => {
+    
+    fileClearManual.addEventListener('click', () => {
         currentFile = null;
-        fileInput.value = "";
-        urlEl.value = "";
-        urlEl.disabled = false;
-        clearUrlBtn.style.display = 'none';
-        nameEl.value = ""; // Очищаем название, если сбрасываем ввод
+        manualFileInput.value = '';
+        manualUrlInput.value = '';
+        manualUrlInput.disabled = false;
+        manualUrlInput.placeholder = "Ссылка на фото (URL)";
+        fileClearManual.classList.add('hidden');
     });
 
-    // ... (остальная логика populatePage)
-  }
+    // --- Логика отправки формы ---
+    document.getElementById('add-item-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = e.submitter;
+        const mode = submitBtn.dataset.mode;
+        
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        statusEl.textContent = 'Обработка запроса...';
+
+        try {
+            let name, url, file;
+            let path; 
+            
+            if (mode === 'marketplace') {
+                name = document.getElementById('marketplace-name').value.trim();
+                url = document.getElementById('marketplace-url').value.trim();
+                path = '/api/wardrobe/add-marketplace'; 
+                
+                if (!name || !url) throw new Error("Заполните все поля Маркетплейса.");
+                
+                // --- Отправка данных Маркетплейса (POST) ---
+                const result = await window.apiPost(path, { name, url });
+                statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+
+            } else { // Manual Mode
+                name = document.getElementById('manual-name').value.trim();
+                url = document.getElementById('manual-url').value.trim();
+                file = currentFile; // Используем переменную из fileInput.addEventListener
+                
+                if (!name) throw new Error("Заполните название предмета.");
+                
+                if (file) {
+                    // --- Отправка ФАЙЛА (UPLOAD) ---
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('image', file);
+                    path = '/api/wardrobe/upload';
+                    
+                    const result = await window.apiUpload(path, formData);
+                    statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+                    
+                } else if (url) {
+                    // --- Отправка URL (POST) ---
+                    path = '/api/wardrobe/add-url'; 
+                    
+                    const result = await window.apiPost(path, { name, url });
+                    statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+
+                } else {
+                    throw new Error("Добавьте ссылку на фото или загрузите файл.");
+                }
+            }
+
+            // Успех: очищаем форму и переходим в гардероб
+            setTimeout(() => {
+                // Переходим в гардероб через 1.5 секунды
+                loadSection('wardrobe'); 
+            }, 1500);
+
+        } catch (error) {
+            statusEl.textContent = `Ошибка: ${error.message || error}`;
+            console.error('Add Item Error:', error);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            manualUrlInput.disabled = false; 
+        }
+    });
+}
+
+
+// Обновим loadSection, чтобы она вызывала addItemPage
+function loadSection(sectionName) {
+    // Сброс активного класса
+    menuBtns.forEach(btn => btn.classList.remove('active'));
+
+    switch(sectionName) {
+      case 'populate': // Меняем 'populate' на 'addItemPage'
+        addItemPage();
+        document.querySelector('[data-section="populate"]').classList.add('active');
+        break;
+      case 'looks':
 
   // Стаб для wardrobePage - Отображение гардероба
   async function wardrobePage() {
