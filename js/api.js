@@ -103,5 +103,29 @@
     await handleApiError(res);
     return await res.json();
   };
+  
+  // ===========================================
+  // НОВОЕ: Добавлен заголовок авторизации и функция DELETE
+  // ===========================================
+  /**
+   * Универсальная функция для отправки DELETE запросов.
+   * Ожидает параметры в виде Query String (поиск по URL).
+   */
+  window.apiDelete = async function(path, params) {
+    params = params || {};
+    
+    const qs = new URLSearchParams(params).toString();
+    const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
+    
+    const res = await fetch(url, {
+      method: "DELETE",
+      // Для DELETE тело обычно пустое, поэтому Content-Type не нужен
+      headers: getHeaders(false) 
+    });
+    
+    await handleApiError(res);
+    return await res.json();
+  };
+
 
 })();
