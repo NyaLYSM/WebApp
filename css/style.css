@@ -267,7 +267,12 @@ body{
   font-size: 16px;
 }
 
+#content:empty {
+    display: none;
+}
+
 #palette-overlay[hidden] {
     display: none !important;
     pointer-events: none !important;
+    visibility: hidden !important;
 }
