@@ -316,3 +316,43 @@ body{
     pointer-events: none !important;
     visibility: hidden !important;
 }
+
+.mode-switch {
+    display: flex;
+    justify-content: flex-start; 
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.mode-switch .small-btn {
+    background: var(--card); /* Неактивный фон */
+    color: var(--muted);
+    font-weight: 500;
+    padding: 10px 15px;
+    box-shadow: none; 
+    opacity: 0.7;
+    transition: background var(--transition), color var(--transition), opacity var(--transition);
+}
+
+.mode-switch .small-btn.active {
+    background: var(--accent); /* Активный фон */
+    color: var(--text);
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.add-content.hidden {
+    display: none !important;
+}
+
+/* Обновленный input-file-wrap для ручного режима */
+.input-file-wrap .input.file-input-like {
+    padding-right: 45px; 
+}
+/* Стили для кнопки "📸" */
+.file-select-btn#file-btn-manual {
+    width: 40px; 
+    height: 40px;
+    padding: 0;
+    font-size: 20px;
+}
