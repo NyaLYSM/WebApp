@@ -359,10 +359,17 @@
   // ---------------------------------------------------------------------------------
   // ЛОГИКА ЗАПУСКА
   // ---------------------------------------------------------------------------------
-  authenticate().then(isAuthenticated => {
-      if(isAuthenticated) {
-          main();
+  if (tg && tg.ready) {
+    tg.ready();
+  }
+
+  setTimeout(() => {
+    authenticate().then(isAuthenticated => {
+      if (isAuthenticated) {
+        main();
       }
-  }).catch(console.error);
+    }).catch(console.error);
+  }, 0);
+
 
 })();
