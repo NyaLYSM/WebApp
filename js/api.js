@@ -1,8 +1,10 @@
 // js/api.js
 
 (function(){
-  // Используем BACKEND_URL, который определен в .env и, возможно, передан
-  window.BACKEND_URL = window.BACKEND_URL || "https://stylist-backend-h5jl.onrender.com";
+  if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
+    console.warn("BACKEND_URL не установлен! Используем локальный дефолт.");
+    window.BACKEND_URL = "http://127.0.0.1:8000"; 
+  }
 
   // ===========================================
   // НОВЫЕ ФУНКЦИИ: Управление токеном
