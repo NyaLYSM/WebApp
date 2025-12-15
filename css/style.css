@@ -119,6 +119,46 @@ body{
 .item-card{ display:block; border-radius:10px; padding:10px; background: color-mix(in srgb, var(--card) 95%, black 4%); margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
 .item-card img{ width:100%; border-radius:8px; margin-bottom:8px; object-fit:cover; }
 
+/* НОВЫЙ СТИЛЬ для размещения имени и кнопки удаления в ряд */
+.item-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: -4px; /* Немного подтянем вверх */
+}
+.item-actions p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    /* Гарантируем, что текст не "вытолкнет" кнопку */
+    min-width: 0;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* small button - для кнопок-иконок и второстепенных действий */
+.small-btn{
+  padding:8px 12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  background:var(--card); 
+  color:var(--text);
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transition:transform var(--transition);
+  flex-shrink: 0; /* Важно: кнопка не должна сжиматься */
+}
+/* Стилизация кнопки удаления (красный цвет) */
+.small-btn.delete { 
+    background: #d32f2f; 
+    color: #fff; 
+    padding: 8px 10px; /* Уменьшим паддинг, так как там только иконка */
+} 
+.small-btn:active{ transform:translateY(1px); }
+
 /* action row */
 .row{ display:flex; gap:8px; align-items:center; }
 
