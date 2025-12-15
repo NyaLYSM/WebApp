@@ -238,8 +238,10 @@
           html += `
             <div class="item-card" data-id="${item.id}">
               <img src="${item.image_url}" alt="${item.name}" loading="lazy" />
-              <p>${item.name}</p>
-              <button class="delete-item-btn" data-item-id="${item.id}">❌ Удалить</button>
+              <div class="item-actions">
+                  <p>${item.name}</p>
+                  <button class="small-btn delete" data-item-id="${item.id}">❌</button>
+              </div>
             </div>
           `;
         });
@@ -250,18 +252,18 @@
       content.innerHTML = '<h2>Ваш гардероб</h2>' + html;
       
       // -----------------------------------------------------------------
-      // НОВАЯ ЛОГИКА: Обработчик удаления
+      // ЛОГИКА: Обработчик удаления
       // -----------------------------------------------------------------
-      document.querySelectorAll('.delete-item-btn').forEach(button => {
+      document.querySelectorAll('.delete').forEach(button => {
         button.addEventListener('click', async (e) => {
           const itemId = e.currentTarget.dataset.itemId;
           
           if (confirm(`Вы уверены, что хотите удалить предмет ID ${itemId}?`)) {
             try {
               e.currentTarget.disabled = true;
-              e.currentTarget.textContent = 'Удаление...';
+              e.currentTarget.textContent = '...';
               
-              // Вызываем новый DELETE API
+              // Вызываем DELETE API
               // Роут: /api/wardrobe/delete?item_id=X
               await window.apiDelete('/api/wardrobe/delete', { item_id: itemId }); 
               
@@ -272,7 +274,7 @@
             } catch (error) {
               alert(`Ошибка при удалении: ${error.message || error}`);
               e.currentTarget.disabled = false;
-              e.currentTarget.textContent = '❌ Удалить';
+              e.currentTarget.textContent = '❌';
             }
           }
         });
