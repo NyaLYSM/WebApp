@@ -349,15 +349,14 @@ async function addItemPage() {
 // ---------------------------------------------------------------------------------
   // ОБРАБОТКА ФОРМЫ ДОБАВЛЕНИЯ ВЕЩИ (handleAddItem)
   // ---------------------------------------------------------------------------------
-  async function handleAddItem(e) {
-      e.preventDefault(); // Предотвращаем стандартную отправку формы
+async function handleAddItem(e) {
+      e.preventDefault(); 
 
       const form = e.currentTarget;
       const formData = new FormData(form);
       const messageBox = document.getElementById('add-item-message');
       
       const name = formData.get('name');
-      // В формах FormData всегда использует snake_case (item-url -> url)
       const url = formData.get('url'); 
       const fileInput = form.querySelector('#item-file');
       const file = fileInput.files[0];
@@ -365,7 +364,6 @@ async function addItemPage() {
       messageBox.className = 'message-box'; 
       messageBox.textContent = 'Обработка...';
 
-      // 1. Проверка валидации
       if (!name) {
           messageBox.textContent = 'Пожалуйста, введите название вещи.';
           messageBox.className = 'message-box error';
@@ -381,7 +379,6 @@ async function addItemPage() {
           let response;
           
           if (file) {
-              // 2. Добавление через файл (используем apiUpload)
               const fileData = new FormData();
               fileData.append('name', name);
               fileData.append('file', file);
@@ -390,7 +387,6 @@ async function addItemPage() {
               response = await window.apiUpload('/api/wardrobe/add-file', fileData);
               
           } else if (url) {
-              // 3. Добавление через URL (используем apiPost)
               messageBox.textContent = 'Загрузка по URL...';
               response = await window.apiPost('/api/wardrobe/add-url', { 
                   name: name, 
@@ -398,14 +394,12 @@ async function addItemPage() {
               });
               
           } else {
-              // Дополнительная проверка, если форма сбросилась
               return;
           }
           
           messageBox.textContent = `✅ Вещь "${response.name}" успешно добавлена!`;
           messageBox.className = 'message-box success';
           
-          // Очистка формы после успешной загрузки
           form.reset();
           
       } catch (error) {
@@ -416,6 +410,9 @@ async function addItemPage() {
       }
   }
 
+// ---------------------------------------------------------------------------------
+  // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
+  // ---------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------
   // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
   // ---------------------------------------------------------------------------------
@@ -443,16 +440,15 @@ async function addItemPage() {
                   <p>Загрузка вещей...</p>
               </div>
           `;
-          // Здесь будет логика загрузки гардероба
           try {
+              // Долгая загрузка здесь - это, скорее всего, холодный старт Render
               const items = await window.apiGet('/api/wardrobe/items');
               
               const list = document.getElementById('wardrobe-list');
-              list.innerHTML = ''; // Очищаем "Загрузка..."
+              list.innerHTML = ''; 
               
               if (items && items.length > 0) {
                   items.forEach(item => {
-                      // Логика отображения вещи
                       list.innerHTML += `
                           <div class="card-item">
                               <img src="${item.image_url}" alt="${item.name}" class="item-img">
@@ -462,8 +458,8 @@ async function addItemPage() {
                       `;
                   });
 
-                  // Добавляем обработчики для кнопок удаления
                   document.querySelectorAll('.delete-btn').forEach(btn => {
+                      // Убедитесь, что эта функция (handleDeleteItem) определена выше
                       btn.addEventListener('click', handleDeleteItem);
                   });
               } else {
@@ -471,62 +467,65 @@ async function addItemPage() {
               }
 
           } catch (e) {
+              // Если загрузка не удалась, показываем ошибку
               content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: ${e.message || e}</p>`;
           }
           
 
-    } else if (section === 'populate') {
-        // Секция добавления вещей
-        content.innerHTML = `
-            <h2>➕ Добавить вещь</h2>
-            <form id="add-item-form" class="form">
-                <div class="form-group">
-                    <label for="item-name">Название:</label>
-                    <input type="text" id="item-name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="item-url">Ссылка на изображение (URL):</label>
-                    <input type="url" id="item-url" name="url">
-                    <p class="form-hint">Или</p>
-                </div>
-                <div class="form-group">
-                    <label for="item-file">Файл изображения:</label>
-                    <input type="file" id="item-file" name="file" accept="image/*">
-                </div>
-                <button type="submit" class="btn primary-btn" id="submit-item-btn">Добавить в гардероб</button>
-            </form>
-            <div id="add-item-message" class="message-box"></div>
-        `;
+      } else if (section === 'populate') {
+          // Секция добавления вещей
+          content.innerHTML = `
+              <h2>➕ Добавить вещь</h2>
+              <form id="add-item-form" class="form">
+                  <div class="form-group">
+                      <label for="item-name">Название:</label>
+                      <input type="text" id="item-name" name="name" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="item-url">Ссылка на изображение (URL):</label>
+                      <input type="url" id="item-url" name="url">
+                      <p class="form-hint">Или</p>
+                  </div>
+                  <div class="form-group">
+                      <label for="item-file">Файл изображения:</label>
+                      <input type="file" id="item-file" name="file" accept="image/*">
+                  </div>
+                  <button type="submit" class="btn primary-btn" id="submit-item-btn">Добавить в гардероб</button>
+              </form>
+              <div id="add-item-message" class="message-box"></div>
+          `;
 
-        // 💥 ИСПРАВЛЕНИЕ: ПРИВЯЗКА ОБРАБОТЧИКА К ФОРМЕ
-        const form = document.getElementById('add-item-form');
-        if (form) {
-            // Привязываем handleAddItem к событию submit формы
-            form.addEventListener('submit', handleAddItem); 
-        }
+          const form = document.getElementById('add-item-form');
+          if (form) {
+              form.addEventListener('submit', handleAddItem); 
+          }
 
 
-    } else if (section === 'looks') {
-        // Секция образов
-        content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
-        // Здесь будет логика для генерации образов
-        
-    } else if (section === 'profile') {
-        // Секция профиля
-        content.innerHTML = `<h2>⚙️ Профиль</h2><p>Настройки пользователя и выход.</p>
-            <button class="btn secondary-btn" id="logout-btn">Выход</button>
-        `;
-        
-        document.getElementById('logout-btn').addEventListener('click', () => {
-             window.clearToken();
-             window.location.reload();
-        });
-        
-    } else {
-        // Неизвестная секция (можно перенаправить на гардероб)
-        loadSection('wardrobe');
-    }
-}
+      } else if (section === 'looks') {
+          // Секция образов
+          content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
+          
+      } else if (section === 'profile') {
+          // Секция профиля (Упрощена и безопасна)
+          content.innerHTML = `<h2>⚙️ Профиль</h2>
+              <p>Ваши настройки и информация о системе.</p>
+              <p>ID пользователя Telegram: ${USER_ID}</p>
+              <p class="form-hint">Выход и сброс авторизации доступны через настройки Telegram Web App.</p>
+              <button class="btn secondary-btn" id="logout-btn-debug">Сбросить авторизацию (Debug)</button>
+          `;
+          
+          // Оставляем Debug-кнопку для возможности сброса токена, если нужно
+          document.getElementById('logout-btn-debug').addEventListener('click', () => {
+             if (confirm("Вы уверены, что хотите сбросить токен авторизации? Приложение перезагрузится.")) {
+                 window.clearToken();
+                 window.location.reload();
+             }
+          });
+          
+      } else {
+          loadSection('wardrobe');
+      }
+  }
 
   // Стаб для wardrobePage - Отображение гардероба
   async function wardrobePage() {
