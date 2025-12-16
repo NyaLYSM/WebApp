@@ -1,5 +1,6 @@
 // js/api.js
-console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
+
+console.log('--- API.js SCRIPT LOADED AND EXECUTING (V8_FINAL_FIX) ---');
 
 (function(){
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
@@ -8,7 +9,7 @@ console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
   }
 
   // ===========================================
-  // НОВЫЕ ФУНКЦИИ: Управление токеном
+  // Управление токеном
   // ===========================================
   window.getToken = function() {
     return localStorage.getItem('access_token');
@@ -25,7 +26,7 @@ console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
     const headers = {};
     const token = window.getToken();
     
-    // КРИТИЧЕСКИ ВАЖНО: Добавление заголовка авторизации
+    // Добавление заголовка авторизации
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -36,48 +37,57 @@ console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
     return headers;
   }
   
-  // Вспомогательная функция для обработки 401
-  async function handleApiError(res) {
-    if (res.status === 401) {
+  // Вспомогательная функция для обработки ошибок
+  async function handleApiError(response) {
+    if (response.status === 401) {
       window.clearToken(); // Сбрасываем недействительный токен
-      // Выбрасываем ошибку, чтобы остановить дальнейшую обработку
-      throw new Error("401 Unauthorized. Сессия истекла. Пожалуйста, перезапустите бота."); 
+      throw new Error("401 Unauthorized. Сессия истекла. Пожалуйста, перезапустите бота.");
     }
-    // Для других ошибок
-    if(!res.ok) {
-      const txt = await res.text();
-      throw new Error("API error: " + res.status + " - " + txt);
+
+    if (!response.ok) {
+        let errorBody;
+        try {
+            errorBody = await response.json();
+        } catch (e) {
+            errorBody = { detail: `Неизвестная ошибка: ${response.status} ${response.statusText}` };
+        }
+        
+        // Извлекаем подробности ошибки
+        const detail = errorBody.detail || errorBody.message || errorBody;
+
+        // Создаем ошибку с понятным статусом
+        const error = new Error(`API Error ${response.status}: ${detail}`);
+        error.status = response.status;
+        error.details = detail;
+        throw error;
     }
-    return res;
   }
 
   // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
+  // ФУНКЦИИ API
   // ===========================================
+
+  // GET
   window.apiGet = async function(path, params) {
     params = params || {};
-    
     const qs = new URLSearchParams(params).toString();
     const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
     
     const res = await fetch(url, {
-      headers: getHeaders(false) 
+      headers: getHeaders(false) // GET не использует JSON тело
     });
     
     await handleApiError(res);
     return await res.json();
   };
 
-  // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
-  // ===========================================
-  window.apiDelete = async function(path, payload) {
+  // POST (JSON) <--- ЭТА ФУНКЦИЯ БЫЛА ПРОПУЩЕНА В ПРЕДЫДУЩЕЙ ВЕРСИИ
+  window.apiPost = async function(path, payload) {
     const url = window.BACKEND_URL + path;
     
     const res = await fetch(url, {
-      method:"DELETE",
-      // Используем getHeaders(true) для JSON-запросов
-      headers: getHeaders(true), 
+      method:"POST",
+      headers: getHeaders(true), // Content-Type: application/json
       body: JSON.stringify(payload || {})
     });
     
@@ -85,14 +95,9 @@ console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
     return await res.json();
   };
 
-  // ===========================================
-  // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
-  // ===========================================
+  // UPLOAD (FormData)
   window.apiUpload = async function(path, formData) {
     const url = window.BACKEND_URL + path;
-    
-    // FormData не может содержать user_id, его удаляет api.js, 
-    // но в app.js лучше тоже не добавлять.
     
     const res = await fetch(url, {
       method: "POST",
@@ -104,29 +109,20 @@ console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
     await handleApiError(res);
     return await res.json();
   };
-  
-  // ===========================================
-  // НОВОЕ: Добавлен заголовок авторизации и функция DELETE
-  // ===========================================
-  /**
-   * Универсальная функция для отправки DELETE запросов.
-   * Ожидает параметры в виде Query String (поиск по URL).
-   */
+
+  // DELETE
   window.apiDelete = async function(path, params) {
     params = params || {};
-    
     const qs = new URLSearchParams(params).toString();
     const url = window.BACKEND_URL + path + (qs ? "?" + qs : "");
     
     const res = await fetch(url, {
       method: "DELETE",
-      // Для DELETE тело обычно пустое, поэтому Content-Type не нужен
       headers: getHeaders(false) 
     });
     
     await handleApiError(res);
     return await res.json();
   };
-
-
+  
 })();
