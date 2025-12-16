@@ -181,12 +181,12 @@ async function addItemPage() {
                 <div class="input-wrap">
                     <input type="url" id="marketplace-url" class="input" placeholder="Ссылка на товар (URL)" required>
                 </div>
-                <button type="submit" class="btn primary" data-mode="marketplace">Добавить из Маркетплейса</button>
+                <button type="submit" class="btn primary" data-mode="marketplace">Добавить в гардероб</button>
             </div>
 
             <div id="mode-manual-content" class="add-content hidden">
                 <div class="input-wrap">
-                    <input type="text" id="manual-name" class="input" placeholder="Название (например, 'Мои любимые джинсы')" required>
+                    <input type="text" id="manual-name" class="input" placeholder="Название (например, 'белые кроссовки')" required>
                 </div>
                 
                 <div class="input-group">
@@ -200,7 +200,7 @@ async function addItemPage() {
                     <input type="file" id="manual-file" accept="image/*" class="hidden"> 
                 </div>
                 
-                <button type="submit" class="btn primary" data-mode="manual">Добавить в Гардероб</button>
+                <button type="submit" class="btn primary" data-mode="manual">Добавить в гардероб</button>
             </div>
             
             <p id="status-message" class="muted-text" style="margin-top: 10px; min-height: 1.2em;"></p>
