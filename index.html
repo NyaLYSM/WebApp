@@ -30,22 +30,19 @@
     <main id="content" class="card"></main>
   </div>
 
-  <!-- ПАЛИТРА -->
   <div id="palette-overlay" class="palette-overlay" hidden>
-    <div class="palette-card">
-      <h3>Выбор палитры</h3>
-
-      <div id="palette-grid" class="palette-grid"></div>
-
-      <div class="palette-actions">
-        <button id="palette-auto" class="small-btn">Авто</button>
-        <button id="palette-close" class="small-btn">Закрыть</button>
-      </div>
+    <div class="palette-content">
+        <div class="palette-header">
+            <h3>Цветовая палитра</h3>
+            <button id="palette-close" class="small-btn" aria-label="Закрыть">&times;</button>
+        </div>
+        <div class="palette-grid" id="palette-grid">
+            </div>
+        <button id="palette-auto" class="btn primary">Авто (По умолчанию)</button>
     </div>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/waves.js"></script>
-  <script src="js/app.js?v=4"></script>
+  <script src="js/api.js?v=4"></script> 
+  <script src="js/app.js?v=4"></script> 
 </body>
 </html>
