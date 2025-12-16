@@ -70,11 +70,11 @@
   // ===========================================
   // ИСПРАВЛЕНО: Добавлен заголовок авторизации и удалена передача user_id
   // ===========================================
-  window.apiPost = async function(path, payload) {
+  window.apiDelete = async function(path, payload) {
     const url = window.BACKEND_URL + path;
     
     const res = await fetch(url, {
-      method:"POST",
+      method:"DELETE",
       // Используем getHeaders(true) для JSON-запросов
       headers: getHeaders(true), 
       body: JSON.stringify(payload || {})
