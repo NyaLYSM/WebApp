@@ -164,7 +164,9 @@
 
 // Стаб для addItemPage - Страница добавления вещи
 async function addItemPage() {
+    // currentFile должен быть null при каждом новом вызове
     let currentFile = null; 
+    
     content.innerHTML = `
         <h2>Добавить в Гардероб</h2>
         
@@ -181,12 +183,12 @@ async function addItemPage() {
                 <div class="input-wrap">
                     <input type="url" id="marketplace-url" class="input" placeholder="Ссылка на товар (URL)" required>
                 </div>
-                <button type="submit" class="btn primary" data-mode="marketplace">Добавить в гардероб</button>
+                <button type="submit" class="btn primary" data-mode="marketplace">Добавить из Маркетплейса</button>
             </div>
 
             <div id="mode-manual-content" class="add-content hidden">
                 <div class="input-wrap">
-                    <input type="text" id="manual-name" class="input" placeholder="Название (например, 'белые кроссовки')" required>
+                    <input type="text" id="manual-name" class="input" placeholder="Название (например, 'Мои любимые джинсы')" required>
                 </div>
                 
                 <div class="input-group">
@@ -200,7 +202,7 @@ async function addItemPage() {
                     <input type="file" id="manual-file" accept="image/*" class="hidden"> 
                 </div>
                 
-                <button type="submit" class="btn primary" data-mode="manual">Добавить в гардероб</button>
+                <button type="submit" class="btn primary" data-mode="manual">Добавить в Гардероб</button>
             </div>
             
             <p id="status-message" class="muted-text" style="margin-top: 10px; min-height: 1.2em;"></p>
@@ -208,8 +210,7 @@ async function addItemPage() {
     `;
 
     const statusEl = document.getElementById("status-message");
-    // ... (остальная логика функции addItemPage без изменений)
-    
+
     // --- Логика переключения вкладок ---
     const marketplaceBtn = document.getElementById('mode-marketplace');
     const manualBtn = document.getElementById('mode-manual');
@@ -221,7 +222,8 @@ async function addItemPage() {
     const manualUrlInput = document.getElementById('manual-url');
     const manualFileInput = document.getElementById('manual-file');
     const fileBtnManual = document.getElementById('file-btn-manual');
-    const fileClearManual = document.getElementById('file-clear-manual');
+    const fileClearManual = document.getElementById('file-clear-manual'); // Получаем элемент
+
     
     const switchMode = (mode) => {
         if (mode === 'marketplace') {
@@ -236,7 +238,7 @@ async function addItemPage() {
             marketplaceContent.classList.add('hidden');
         }
         statusEl.textContent = '';
-        if (fileClearManual) fileClearManual.click();
+        if (fileClearManual) fileClearManual.click(); // Безопасный сброс
     };
     
     switchMode('marketplace');
@@ -291,7 +293,6 @@ async function addItemPage() {
                 if (!name || !url) throw new Error("Заполните все поля Маркетплейса.");
                 
                 await window.apiPost(path, { name, url });
-                statusEl.textContent = `Предмет '${name}' добавлен!`;
 
             } else { // Manual Mode
                 name = document.getElementById('manual-name').value.trim();
@@ -307,14 +308,12 @@ async function addItemPage() {
                     path = '/api/wardrobe/upload';
                     
                     await window.apiUpload(path, formData);
-                    statusEl.textContent = `Предмет '${name}' добавлен!`;
                     
                 } else if (url) {
                     // --- Отправка URL (POST) ---
                     path = '/api/wardrobe/add-url'; 
                     
                     await window.apiPost(path, { name, url });
-                    statusEl.textContent = `Предмет '${name}' добавлен!`;
 
                 } else {
                     throw new Error("Добавьте ссылку на фото или загрузите файл.");
@@ -323,7 +322,14 @@ async function addItemPage() {
 
             // Успех: переходим в гардероб
             formEl.reset();
-            fileClearManual.click(); 
+            
+            // ИСПРАВЛЕНИЕ БАГА: Безопасный сброс полей после успешного запроса
+            if (fileClearManual) {
+                 fileClearManual.click(); 
+            }
+            
+            statusEl.textContent = `Успешно добавлено! Переход в гардероб...`; 
+            
             setTimeout(() => {
                 loadSection('wardrobe'); 
             }, 1500);
@@ -334,6 +340,7 @@ async function addItemPage() {
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
+            // Убеждаемся, что поле URL снова активно, если оно было отключено
             if (manualUrlInput) manualUrlInput.disabled = false; 
         }
     });
