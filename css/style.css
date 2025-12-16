@@ -395,3 +395,7 @@ body{
     padding: 4px;
     line-height: 1;
 }
+
+.hidden {
+    display: none !important;
+}
