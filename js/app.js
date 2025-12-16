@@ -416,31 +416,115 @@ async function addItemPage() {
       }
   }
 
-// Обновим loadSection, чтобы она вызывала addItemPage
-function loadSection(sectionName) {
-    // Сброс активного класса
-    menuBtns.forEach(btn => btn.classList.remove('active'));
+// ---------------------------------------------------------------------------------
+  // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
+  // ---------------------------------------------------------------------------------
+  async function loadSection(section) {
+      // Подсвечиваем активную кнопку
+      menuBtns.forEach(btn => {
+          if (btn.dataset.section === section) {
+              btn.classList.add('active');
+          } else {
+              btn.classList.remove('active');
+          }
+      });
 
-    switch(sectionName) {
-      case 'wardrobe':
-        wardrobePage(); 
-        document.querySelector('[data-section="wardrobe"]').classList.add('active');
-        break;
-      case 'looks':
-        looksPage(); 
-        document.querySelector('[data-section="looks"]').classList.add('active');
-        break;
-      case 'populate': // ГЛАВНОЕ ИЗМЕНЕНИЕ: Вход на страницу добавления
-        addItemPage();
-        document.querySelector('[data-section="populate"]').classList.add('active');
-        break;
-      case 'profile':
-        profilePage(); 
-        document.querySelector('[data-section="profile"]').classList.add('active');
-        break;
-      default:
-        wardrobePage();
-        document.querySelector('[data-section="wardrobe"]').classList.add('active');
+      // Обновляем URL
+      window.history.pushState(null, null, `#${section}`);
+
+      // Очистка контента
+      content.innerHTML = '';
+      
+      // Логика загрузки разделов
+      if (section === 'wardrobe') {
+          content.innerHTML = `
+              <h2>👗 Мой гардероб</h2>
+              <div class="card-list" id="wardrobe-list">
+                  <p>Загрузка вещей...</p>
+              </div>
+          `;
+          // Здесь будет логика загрузки гардероба
+          try {
+              const items = await window.apiGet('/api/wardrobe/items');
+              
+              const list = document.getElementById('wardrobe-list');
+              list.innerHTML = ''; // Очищаем "Загрузка..."
+              
+              if (items && items.length > 0) {
+                  items.forEach(item => {
+                      // Логика отображения вещи
+                      list.innerHTML += `
+                          <div class="card-item">
+                              <img src="${item.image_url}" alt="${item.name}" class="item-img">
+                              <p class="item-name">${item.name}</p>
+                              <button class="small-btn delete-btn" data-item-id="${item.id}">❌</button>
+                          </div>
+                      `;
+                  });
+
+                  // Добавляем обработчики для кнопок удаления
+                  document.querySelectorAll('.delete-btn').forEach(btn => {
+                      btn.addEventListener('click', handleDeleteItem);
+                  });
+              } else {
+                   list.innerHTML = "<p>Ваш гардероб пока пуст. Добавьте первую вещь!</p>";
+              }
+
+          } catch (e) {
+              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: ${e.message || e}</p>`;
+          }
+          
+
+    } else if (section === 'populate') {
+        // Секция добавления вещей
+        content.innerHTML = `
+            <h2>➕ Добавить вещь</h2>
+            <form id="add-item-form" class="form">
+                <div class="form-group">
+                    <label for="item-name">Название:</label>
+                    <input type="text" id="item-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="item-url">Ссылка на изображение (URL):</label>
+                    <input type="url" id="item-url" name="url">
+                    <p class="form-hint">Или</p>
+                </div>
+                <div class="form-group">
+                    <label for="item-file">Файл изображения:</label>
+                    <input type="file" id="item-file" name="file" accept="image/*">
+                </div>
+                <button type="submit" class="btn primary-btn" id="submit-item-btn">Добавить в гардероб</button>
+            </form>
+            <div id="add-item-message" class="message-box"></div>
+        `;
+
+        // 💥 ИСПРАВЛЕНИЕ: ПРИВЯЗКА ОБРАБОТЧИКА К ФОРМЕ
+        const form = document.getElementById('add-item-form');
+        if (form) {
+            // Привязываем handleAddItem к событию submit формы
+            form.addEventListener('submit', handleAddItem); 
+        }
+
+
+    } else if (section === 'looks') {
+        // Секция образов
+        content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
+        // Здесь будет логика для генерации образов
+        
+    } else if (section === 'profile') {
+        // Секция профиля
+        content.innerHTML = `<h2>⚙️ Профиль</h2><p>Настройки пользователя и выход.</p>
+            <button class="btn secondary-btn" id="logout-btn">Выход</button>
+        `;
+        
+        document.getElementById('logout-btn').addEventListener('click', () => {
+             window.clearToken();
+             window.location.reload();
+        });
+        
+    } else {
+        // Неизвестная секция (можно перенаправить на гардероб)
+        loadSection('wardrobe');
     }
 }
 
