@@ -346,6 +346,75 @@ async function addItemPage() {
     });
 }
 
+// ---------------------------------------------------------------------------------
+  // ОБРАБОТКА ФОРМЫ ДОБАВЛЕНИЯ ВЕЩИ (handleAddItem)
+  // ---------------------------------------------------------------------------------
+  async function handleAddItem(e) {
+      e.preventDefault(); // Предотвращаем стандартную отправку формы
+
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+      const messageBox = document.getElementById('add-item-message');
+      
+      const name = formData.get('name');
+      // В формах FormData всегда использует snake_case (item-url -> url)
+      const url = formData.get('url'); 
+      const fileInput = form.querySelector('#item-file');
+      const file = fileInput.files[0];
+      
+      messageBox.className = 'message-box'; 
+      messageBox.textContent = 'Обработка...';
+
+      // 1. Проверка валидации
+      if (!name) {
+          messageBox.textContent = 'Пожалуйста, введите название вещи.';
+          messageBox.className = 'message-box error';
+          return;
+      }
+      if (!url && !file) {
+          messageBox.textContent = 'Пожалуйста, введите URL или выберите файл.';
+          messageBox.className = 'message-box error';
+          return;
+      }
+      
+      try {
+          let response;
+          
+          if (file) {
+              // 2. Добавление через файл (используем apiUpload)
+              const fileData = new FormData();
+              fileData.append('name', name);
+              fileData.append('file', file);
+              
+              messageBox.textContent = 'Загрузка файла...';
+              response = await window.apiUpload('/api/wardrobe/add-file', fileData);
+              
+          } else if (url) {
+              // 3. Добавление через URL (используем apiPost)
+              messageBox.textContent = 'Загрузка по URL...';
+              response = await window.apiPost('/api/wardrobe/add-url', { 
+                  name: name, 
+                  url: url 
+              });
+              
+          } else {
+              // Дополнительная проверка, если форма сбросилась
+              return;
+          }
+          
+          messageBox.textContent = `✅ Вещь "${response.name}" успешно добавлена!`;
+          messageBox.className = 'message-box success';
+          
+          // Очистка формы после успешной загрузки
+          form.reset();
+          
+      } catch (error) {
+          console.error("Ошибка при добавлении вещи:", error);
+          const detail = error.message || "Неизвестная ошибка сервера.";
+          messageBox.textContent = `❌ Ошибка: ${detail}`;
+          messageBox.className = 'message-box error';
+      }
+  }
 
 // Обновим loadSection, чтобы она вызывала addItemPage
 function loadSection(sectionName) {
