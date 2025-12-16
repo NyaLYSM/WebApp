@@ -132,30 +132,110 @@
   // ЛОГИКА НАВИГАЦИИ
   // =================================================================================
   
-  function loadSection(sectionName) {
-    // Сброс активного класса
-    menuBtns.forEach(btn => btn.classList.remove('active'));
+// ---------------------------------------------------------------------------------
+  // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
+  // ---------------------------------------------------------------------------------
+  async function loadSection(section) {
+      // Подсвечиваем активную кнопку
+      menuBtns.forEach(btn => {
+          if (btn.dataset.section === section) {
+              btn.classList.add('active');
+          } else {
+              btn.classList.remove('active');
+          }
+      });
 
-    switch(sectionName) {
-      case 'populate':
-        populatePage();
-        document.querySelector('[data-section="populate"]').classList.add('active');
-        break;
-      case 'looks':
-        looksPage();
-        document.querySelector('[data-section="looks"]').classList.add('active');
-        break;
-      case 'profile':
-        profilePage();
-        document.querySelector('[data-section="profile"]').classList.add('active');
-        break;
-      case 'wardrobe':
-      default:
-        wardrobePage();
-        document.querySelector('[data-section="wardrobe"]').classList.add('active');
-        break;
-    }
-    window.location.hash = sectionName;
+      // Обновляем URL
+      window.history.pushState(null, null, `#${section}`);
+
+      // Очистка контента
+      content.innerHTML = '';
+      
+      // Логика загрузки разделов
+      if (section === 'wardrobe') {
+          content.innerHTML = `
+              <h2>👗 Мой гардероб</h2>
+              <div class="card-list" id="wardrobe-list">
+                  <p>Загрузка вещей...</p>
+              </div>
+          `;
+          try {
+              // Запрос может быть долгим из-за холодного старта Render
+              const items = await window.apiGet('/api/wardrobe/items');
+              
+              const list = document.getElementById('wardrobe-list');
+              list.innerHTML = ''; 
+              
+              if (items && items.length > 0) {
+                  items.forEach(item => {
+                      list.innerHTML += `
+                          <div class="card-item">
+                              <img src="${item.image_url}" alt="${item.name}" class="item-img">
+                              <p class="item-name">${item.name}</p>
+                              <button class="small-btn delete-btn" data-item-id="${item.id}">❌</button>
+                          </div>
+                      `;
+                  });
+
+                  document.querySelectorAll('.delete-btn').forEach(btn => {
+                      btn.addEventListener('click', handleDeleteItem);
+                  });
+              } else {
+                   list.innerHTML = "<p>Ваш гардероб пока пуст. Добавьте первую вещь!</p>";
+              }
+
+          } catch (e) {
+              // Критично: показываем ошибку 404, чтобы пользователь понял, что сломан бэкенд
+              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб (Wardrobe): **${e.message || e}**</p>`;
+          }
+          
+
+      } else if (section === 'populate') {
+          // Секция добавления вещей (Восстановлен внешний вид кнопок)
+          content.innerHTML = `
+              <h2>➕ Добавить вещь</h2>
+              <form id="add-item-form" class="form">
+                  <div class="form-group">
+                      <label for="item-name">Название:</label>
+                      <input type="text" id="item-name" name="name" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="item-url">Ссылка на изображение (URL):</label>
+                      <input type="url" id="item-url" name="url">
+                      <p class="form-hint">Или</p>
+                  </div>
+                  <div class="form-group">
+                      <label for="item-file">Файл изображения:</label>
+                      <input type="file" id="item-file" name="file" accept="image/*">
+                  </div>
+                  <button type="submit" class="btn primary-btn" id="submit-item-btn">Добавить в гардероб</button>
+              </form>
+              <div id="add-item-message" class="message-box"></div>
+          `;
+
+          const form = document.getElementById('add-item-form');
+          if (form) {
+              form.addEventListener('submit', handleAddItem); 
+          }
+
+
+      } else if (section === 'looks') {
+          // Секция образов
+          content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
+          
+      } else if (section === 'profile') {
+          // Секция профиля (Упрощена: только ID)
+          content.innerHTML = `<h2>⚙️ Профиль</h2>
+              <p>Ваш уникальный ID:</p>
+              <p class="profile-id-box"><span class="highlight">${USER_ID}</span></p>
+              <p class="form-hint">Используйте этот ID для отладки или поддержки.</p>
+          `;
+          
+          // Кнопка выхода удалена.
+          
+      } else {
+          loadSection('wardrobe');
+      }
   }
   
   // =================================================================================
@@ -709,23 +789,14 @@ if (tg && tg.initData && !window.getToken()) {
       // Пытаемся авторизоваться, но гарантируем запуск main() в любом случае.
       authenticate()
           .then(success => {
-              if (success) {
-                  main();
-              } else {
-                  // Авторизация не удалась (например, 401), но запускаем main() 
-                  // для интерактивности UI.
-                  main(); 
-              }
+              main();
           })
           .catch(error => {
               console.error("Критическая ошибка при вызове authenticate:", error);
-              // Если произошла сетевая ошибка (например, Render не отвечает),
-              // также запускаем main().
               main(); 
           });
   } else {
       // Иначе (токен есть или нет данных Telegram), запускаем сразу
       main();
-  } 
-
+  }
 })();
