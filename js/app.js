@@ -164,7 +164,9 @@
 
 // Стаб для addItemPage - Страница добавления вещи
 async function addItemPage() {
-    let currentFile = null;
+    // ВНИМАНИЕ: currentFile должен быть null при каждом новом вызове
+    let currentFile = null; 
+    
     content.innerHTML = `
         <h2>Добавить в Гардероб</h2>
         
@@ -216,7 +218,14 @@ async function addItemPage() {
     const manualBtn = document.getElementById('mode-manual');
     const marketplaceContent = document.getElementById('mode-marketplace-content');
     const manualContent = document.getElementById('mode-manual-content');
-
+    const formEl = document.getElementById('add-item-form');
+    
+    // Элементы ручного ввода
+    const manualUrlInput = document.getElementById('manual-url');
+    const manualFileInput = document.getElementById('manual-file');
+    const fileBtnManual = document.getElementById('file-btn-manual');
+    const fileClearManual = document.getElementById('file-clear-manual');
+    
     const switchMode = (mode) => {
         if (mode === 'marketplace') {
             marketplaceBtn.classList.add('active');
@@ -229,31 +238,26 @@ async function addItemPage() {
             manualContent.classList.remove('hidden');
             marketplaceContent.classList.add('hidden');
         }
-        // Очищаем статус при переключении
         statusEl.textContent = '';
         // Сброс ручного ввода при переключении
-        fileClearManual.click(); 
+        if (fileClearManual) fileClearManual.click();
     };
     
+    switchMode('marketplace');
+
     marketplaceBtn.addEventListener('click', () => switchMode('marketplace'));
     manualBtn.addEventListener('click', () => switchMode('manual'));
 
     // --- Логика загрузки файла и очистки (для Manual Mode) ---
-    const manualUrlInput = document.getElementById('manual-url');
-    const manualFileInput = document.getElementById('manual-file');
-    const fileBtnManual = document.getElementById('file-btn-manual');
-    const fileClearManual = document.getElementById('file-clear-manual');
-    
     fileBtnManual.addEventListener('click', () => manualFileInput.click());
     
     manualFileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            currentFile = e.target.files[0];
+        currentFile = e.target.files[0] || null;
+        if (currentFile) {
             manualUrlInput.value = currentFile.name;
             manualUrlInput.disabled = true;
             fileClearManual.classList.remove('hidden');
         } else {
-            currentFile = null;
             manualUrlInput.disabled = false;
             manualUrlInput.placeholder = "Ссылка на фото (URL)";
             fileClearManual.classList.add('hidden');
@@ -270,7 +274,7 @@ async function addItemPage() {
     });
 
     // --- Логика отправки формы ---
-    document.getElementById('add-item-form').addEventListener('submit', async (e) => {
+    formEl.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = e.submitter;
         const mode = submitBtn.dataset.mode;
@@ -280,7 +284,7 @@ async function addItemPage() {
         statusEl.textContent = 'Обработка запроса...';
 
         try {
-            let name, url, file;
+            let name, url;
             let path; 
             
             if (mode === 'marketplace') {
@@ -290,42 +294,41 @@ async function addItemPage() {
                 
                 if (!name || !url) throw new Error("Заполните все поля Маркетплейса.");
                 
-                // --- Отправка данных Маркетплейса (POST) ---
-                const result = await window.apiPost(path, { name, url });
-                statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+                await window.apiPost(path, { name, url });
+                statusEl.textContent = `Предмет '${name}' добавлен!`;
 
             } else { // Manual Mode
                 name = document.getElementById('manual-name').value.trim();
                 url = document.getElementById('manual-url').value.trim();
-                file = currentFile; // Используем переменную из fileInput.addEventListener
                 
                 if (!name) throw new Error("Заполните название предмета.");
                 
-                if (file) {
+                if (currentFile) {
                     // --- Отправка ФАЙЛА (UPLOAD) ---
                     const formData = new FormData();
                     formData.append('name', name);
-                    formData.append('image', file);
+                    formData.append('image', currentFile);
                     path = '/api/wardrobe/upload';
                     
-                    const result = await window.apiUpload(path, formData);
-                    statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+                    await window.apiUpload(path, formData);
+                    statusEl.textContent = `Предмет '${name}' добавлен!`;
                     
                 } else if (url) {
                     // --- Отправка URL (POST) ---
                     path = '/api/wardrobe/add-url'; 
                     
-                    const result = await window.apiPost(path, { name, url });
-                    statusEl.textContent = `Предмет '${name}' добавлен (ID: ${result.item_id})!`;
+                    await window.apiPost(path, { name, url });
+                    statusEl.textContent = `Предмет '${name}' добавлен!`;
 
                 } else {
                     throw new Error("Добавьте ссылку на фото или загрузите файл.");
                 }
             }
 
-            // Успех: очищаем форму и переходим в гардероб
+            // Успех: переходим в гардероб
+            formEl.reset();
+            fileClearManual.click(); 
             setTimeout(() => {
-                // Переходим в гардероб через 1.5 секунды
                 loadSection('wardrobe'); 
             }, 1500);
 
@@ -335,7 +338,7 @@ async function addItemPage() {
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
-            manualUrlInput.disabled = false; 
+            if (manualUrlInput) manualUrlInput.disabled = false; 
         }
     });
 }
@@ -347,11 +350,27 @@ function loadSection(sectionName) {
     menuBtns.forEach(btn => btn.classList.remove('active'));
 
     switch(sectionName) {
-      case 'populate': // Меняем 'populate' на 'addItemPage'
+      case 'wardrobe':
+        wardrobePage(); 
+        document.querySelector('[data-section="wardrobe"]').classList.add('active');
+        break;
+      case 'looks':
+        looksPage(); 
+        document.querySelector('[data-section="looks"]').classList.add('active');
+        break;
+      case 'populate': // ГЛАВНОЕ ИЗМЕНЕНИЕ: Вход на страницу добавления
         addItemPage();
         document.querySelector('[data-section="populate"]').classList.add('active');
         break;
-      case 'looks':
+      case 'profile':
+        profilePage(); 
+        document.querySelector('[data-section="profile"]').classList.add('active');
+        break;
+      default:
+        wardrobePage();
+        document.querySelector('[data-section="wardrobe"]').classList.add('active');
+    }
+}
 
   // Стаб для wardrobePage - Отображение гардероба
   async function wardrobePage() {
