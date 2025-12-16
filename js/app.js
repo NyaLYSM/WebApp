@@ -164,9 +164,7 @@
 
 // Стаб для addItemPage - Страница добавления вещи
 async function addItemPage() {
-    // ВНИМАНИЕ: currentFile должен быть null при каждом новом вызове
     let currentFile = null; 
-    
     content.innerHTML = `
         <h2>Добавить в Гардероб</h2>
         
@@ -177,7 +175,6 @@ async function addItemPage() {
 
         <form id="add-item-form">
             <div id="mode-marketplace-content" class="add-content">
-                <p class="muted-text">Введите название предмета и ссылку на товар (Wildberries, Ozon и т.п.).</p>
                 <div class="input-wrap">
                     <input type="text" id="marketplace-name" class="input" placeholder="Название (например, 'Летнее платье')" required>
                 </div>
@@ -188,7 +185,6 @@ async function addItemPage() {
             </div>
 
             <div id="mode-manual-content" class="add-content hidden">
-                <p class="muted-text">Введите название и добавьте ссылку на фото или загрузите файл.</p>
                 <div class="input-wrap">
                     <input type="text" id="manual-name" class="input" placeholder="Название (например, 'Мои любимые джинсы')" required>
                 </div>
@@ -199,10 +195,10 @@ async function addItemPage() {
                         <button type="button" class="file-clear-btn hidden" id="file-clear-manual" aria-label="Очистить">&times;</button>
                     </div>
                     <button type="button" class="file-select-btn" id="file-btn-manual">
-                        <span id="file-icon">📸</span>
+                        <span id="file-icon">🖼️</span>
                     </button>
+                    <input type="file" id="manual-file" accept="image/*" class="hidden"> 
                 </div>
-                <input type="file" id="manual-file" accept="image/*" class="hidden"> 
                 
                 <button type="submit" class="btn primary" data-mode="manual">Добавить в Гардероб</button>
             </div>
@@ -212,7 +208,8 @@ async function addItemPage() {
     `;
 
     const statusEl = document.getElementById("status-message");
-
+    // ... (остальная логика функции addItemPage без изменений)
+    
     // --- Логика переключения вкладок ---
     const marketplaceBtn = document.getElementById('mode-marketplace');
     const manualBtn = document.getElementById('mode-manual');
@@ -239,7 +236,6 @@ async function addItemPage() {
             marketplaceContent.classList.add('hidden');
         }
         statusEl.textContent = '';
-        // Сброс ручного ввода при переключении
         if (fileClearManual) fileClearManual.click();
     };
     
