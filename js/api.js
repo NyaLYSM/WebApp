@@ -1,4 +1,5 @@
 // js/api.js
+console.log('--- API.js SCRIPT LOADED AND EXECUTING (V6) ---');
 
 (function(){
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
