@@ -29,6 +29,42 @@
     { name:"Light Mode", bg:"#f0f2f5", card:"#ffffff", text:"#333", accent:"#4285f4", waveStart:"#89caff", waveEnd:"#4285f4" },
   ];
 
+
+  async function startApp() {
+    // 1. Инициализируем палитру и навигацию сразу (чтобы UI не висел)
+    setupPalette();
+    document.querySelectorAll(".menu .btn").forEach(btn => {
+      btn.addEventListener("click", (e) => loadSection(e.currentTarget.dataset.section));
+    });
+
+    content.innerHTML = '<div class="loader">Стилист просыпается...</div>';
+
+    try {
+      // 2. Ждем бэкенд (Render засыпает)
+      await window.waitForBackend();
+
+      // 3. Если мы в телеграме и токена НЕТ — логинимся
+      if (tg && tg.initData && !window.getToken()) {
+        const authData = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+        if (authData && authData.access_token) {
+          window.setToken(authData.access_token);
+        }
+      }
+    } catch (err) {
+      console.error("Ошибка при старте:", err);
+    } finally {
+      // 4. Загружаем гардероб в любом случае
+      loadSection('wardrobe');
+    }
+  }
+
+  // Запуск
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
+
   function initNavigation() {
     menuBtns.forEach(btn => {
       btn.addEventListener("click", (e) => {
@@ -336,30 +372,6 @@
       } catch (error) { alert(error.message); }
   }
 
-// Основная функция загрузки
-  async function startApp() {
-    // 1. Сразу включаем навигацию, чтобы кнопки кликались
-    initNavigation();
-    setupPalette();
-
-    // 2. Показываем лоадер
-    content.innerHTML = '<div class="loader">Загрузка приложения...</div>';
-
-    try {
-      // 3. Пытаемся дождаться бэкенда (не критично, если упадет)
-      await window.waitForBackend();
-
-      // 4. Авторизация
-      if (tg && tg.initData && !window.getToken()) {
-        await authenticate();
-      }
-    } catch (err) {
-      console.error("Startup error:", err);
-    } finally {
-      // 5. В любом случае загружаем стартовую секцию
-      loadSection('wardrobe');
-    }
-  }
 
   async function authenticate() {
     try {
