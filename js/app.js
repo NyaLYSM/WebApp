@@ -4,7 +4,6 @@
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   try { tg && tg.expand && tg.expand(); } catch(e){}
   
-  const USER_ID = (tg?.initDataUnsafe?.user?.id) || 0; 
   const content = document.getElementById("content");
   const menuBtns = document.querySelectorAll(".menu .btn");
 
@@ -29,6 +28,15 @@
     { name:"Green", bg:"#0e1a0f", card:"#122413", text:"#ffffff", accent:"#00d14b", waveStart:"#00ff96", waveEnd:"#00aa60" },
     { name:"Light Mode", bg:"#f0f2f5", card:"#ffffff", text:"#333", accent:"#4285f4", waveStart:"#89caff", waveEnd:"#4285f4" },
   ];
+
+  function initNavigation() {
+    menuBtns.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const section = e.currentTarget.dataset.section;
+        loadSection(section);
+      });
+    });
+  }
 
   function setupPalette() {
       // 1. Генерация сетки цветов
@@ -328,43 +336,46 @@
       } catch (error) { alert(error.message); }
   }
 
-  async function authenticate() {
-      const initData = (tg && tg.initData) || '';
-      if (!initData) return false;
-      try {
-          const res = await window.apiPost('/api/auth/tg-login', { initData });
-          window.setToken(res.access_token);
-          return true;
-      } catch (e) { return false; }
-  }
+// Основная функция загрузки
+  async function startApp() {
+    // 1. Сразу включаем навигацию, чтобы кнопки кликались
+    initNavigation();
+    setupPalette();
 
-  function main() {
-    setupPalette(); // Инициализация палитры
-    menuBtns.forEach(btn => btn.addEventListener("click", (e) => loadSection(e.currentTarget.dataset.section)));
-    loadSection('wardrobe');
-  }
-  
-  // Старт приложения
-(async function startApp() {
-  try {
-    // 1. Ждём, пока backend проснётся
-    await window.waitForBackend();
+    // 2. Показываем лоадер
+    content.innerHTML = '<div class="loader">Загрузка приложения...</div>';
 
-    // 2. Авторизация (если нужно)
-    if (tg && tg.initData && !window.getToken()) {
-      const ok = await authenticate();
-      console.log("TG auth:", ok ? "ok" : "failed");
+    try {
+      // 3. Пытаемся дождаться бэкенда (не критично, если упадет)
+      await window.waitForBackend();
+
+      // 4. Авторизация
+      if (tg && tg.initData && !window.getToken()) {
+        await authenticate();
+      }
+    } catch (err) {
+      console.error("Startup error:", err);
+    } finally {
+      // 5. В любом случае загружаем стартовую секцию
+      loadSection('wardrobe');
     }
-
-    // 3. Запуск UI
-    main();
-
-  } catch (e) {
-    console.error("❌ App start failed:", e);
-
-    alert(
-      "Сервер запускается чуть дольше обычного.\n" +
-      "Подождите несколько секунд и попробуйте снова."
-    );
   }
-})();
+
+  async function authenticate() {
+    try {
+      const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+      window.setToken(res.access_token);
+      return true;
+    } catch (e) {
+      console.error("Auth failed");
+      return false;
+    }
+  }
+
+  // Запуск
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
+})();  
