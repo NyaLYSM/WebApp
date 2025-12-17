@@ -251,7 +251,7 @@
                   </div>
                   <div class="form-group">
                       <label>Ссылка на товар</label>
-                      <input type="url" name="url" class="input" placeholder="https://..." required>
+                      <input type="url" name="url" class="input" placeholder="https://wildberries..." required>
                   </div>
                   <button type="submit" class="btn primary-btn" style="width:100%; margin-top:15px;">Добавить</button>
               </form>
@@ -259,7 +259,7 @@
               <form id="form-manual" class="tab-content ${currentTab === 'manual' ? 'active' : ''}" data-type="manual">
                   <div class="form-group">
                       <label>Название</label>
-                      <input type="text" name="name" class="input" placeholder="Например: Моя футболка" required>
+                      <input type="text" name="name" class="input" placeholder="Например: Серая футболка" required>
                   </div>
                   <div class="form-group">
                       <label>Фото (Файл или Ссылка)</label>
@@ -352,3 +352,4 @@
   }
 
 })();
+
