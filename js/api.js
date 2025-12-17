@@ -11,41 +11,44 @@
   function getHeaders(json = true) {
     const h = {};
     const token = window.getToken();
-    if (token) h.Authorization = `Bearer ${token}`;
+    // ИСПРАВЛЕНИЕ: Добавляем заголовок только если токен реально существует и он не пустой
+    if (token && token !== "undefined" && token !== "null") {
+      h.Authorization = `Bearer ${token}`;
+    }
     if (json) h["Content-Type"] = "application/json";
     return h;
   }
 
   async function handleApiError(res) {
     if (res.status === 401) {
+      console.warn("Сессия истекла или токен неверный");
       window.clearToken();
-      // Не кидаем ошибку сразу, чтобы дать приложению загрузиться
+      // Не кидаем исключение здесь, чтобы старт приложения (startApp) мог продолжить работу
+      return; 
     }
     if (!res.ok) {
       const details = await res.text();
-      throw new Error(`API Error ${res.status}: ${details}`);
+      throw new Error(`Ошибка ${res.status}: ${details}`);
     }
   }
 
-  // Метод для "прогрева" сервера
   window.waitForBackend = async () => {
-    const maxAttempts = 5;
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-        const res = await fetch(window.BACKEND_URL + "/health");
-        if (res.ok) return true;
-      } catch (e) {
-        console.log("Waiting for backend...");
-      }
-      await new Promise(r => setTimeout(r, 2000));
+    try {
+      const res = await fetch(window.BACKEND_URL + "/health", { method: 'GET' });
+      return res.ok;
+    } catch (e) {
+      console.log("Ожидание пробуждения сервера...");
+      return false;
     }
   };
 
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { headers: getHeaders(false) });
+    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { 
+      headers: getHeaders(false) 
+    });
     await handleApiError(res);
-    return res.json();
+    return res.ok ? res.json() : []; // Возвращаем пустой массив при ошибке (например 401)
   };
 
   window.apiPost = async (path, payload = {}) => {
@@ -55,7 +58,7 @@
       body: JSON.stringify(payload)
     });
     await handleApiError(res);
-    return res.json();
+    return res.ok ? res.json() : null;
   };
 
   window.apiUpload = async (path, formData) => {
