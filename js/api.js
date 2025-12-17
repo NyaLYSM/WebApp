@@ -1,25 +1,13 @@
 // js/api.js
-console.log('--- API.js LOADED ---');
-
 (function () {
-
-  // =========================
-  // BACKEND URL
-  // =========================
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
   }
 
-  // =========================
-  // TOKEN
-  // =========================
   window.getToken = () => localStorage.getItem("access_token");
   window.setToken = (t) => localStorage.setItem("access_token", t);
   window.clearToken = () => localStorage.removeItem("access_token");
 
-  // =========================
-  // HEADERS
-  // =========================
   function getHeaders(json = true) {
     const h = {};
     const token = window.getToken();
@@ -28,64 +16,34 @@ console.log('--- API.js LOADED ---');
     return h;
   }
 
-  // =========================
-  // ERROR HANDLER
-  // =========================
   async function handleApiError(res) {
     if (res.status === 401) {
       window.clearToken();
-      throw new Error("401 Unauthorized");
+      // Не кидаем ошибку сразу, чтобы дать приложению загрузиться
     }
-
     if (!res.ok) {
-      let body;
-      try {
-        body = await res.json();
-      } catch {
-        body = { detail: res.statusText };
-      }
-      throw new Error(body.detail || "API error");
+      const details = await res.text();
+      throw new Error(`API Error ${res.status}: ${details}`);
     }
   }
 
-  // =========================
-  // WAIT FOR BACKEND (Render)
-  // =========================
-  window.waitForBackend = async function ({
-    timeoutMs = 60000,
-    intervalMs = 3000
-  } = {}) {
-
-    console.log("⏳ Waiting for backend...");
-
-    const start = Date.now();
-
-    while (Date.now() - start < timeoutMs) {
+  // Метод для "прогрева" сервера
+  window.waitForBackend = async () => {
+    const maxAttempts = 5;
+    for (let i = 0; i < maxAttempts; i++) {
       try {
-        const res = await fetch(window.BACKEND_URL + "/health", {
-          cache: "no-store"
-        });
-        if (res.ok) {
-          console.log("✅ Backend is awake");
-          return true;
-        }
-      } catch (_) {}
-
-      await new Promise(r => setTimeout(r, intervalMs));
+        const res = await fetch(window.BACKEND_URL + "/health");
+        if (res.ok) return true;
+      } catch (e) {
+        console.log("Waiting for backend...");
+      }
+      await new Promise(r => setTimeout(r, 2000));
     }
-
-    throw new Error("Backend did not wake up in time");
   };
 
-  // =========================
-  // API METHODS
-  // =========================
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(
-      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
-      { headers: getHeaders(false) }
-    );
+    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { headers: getHeaders(false) });
     await handleApiError(res);
     return res.json();
   };
@@ -112,12 +70,11 @@ console.log('--- API.js LOADED ---');
 
   window.apiDelete = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(
-      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
-      { method: "DELETE", headers: getHeaders(false) }
-    );
+    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), {
+      method: "DELETE",
+      headers: getHeaders(false)
+    });
     await handleApiError(res);
     return res.json();
   };
-
 })();
