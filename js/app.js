@@ -30,35 +30,28 @@
   ];
 
 
-  async function startApp() {
-    // 1. Инициализируем палитру и навигацию сразу (чтобы UI не висел)
-    setupPalette();
-    document.querySelectorAll(".menu .btn").forEach(btn => {
-      btn.addEventListener("click", (e) => loadSection(e.currentTarget.dataset.section));
-    });
+async function startApp() {
+    initNavigation(); // Кнопки теперь работают сразу!
 
-    content.innerHTML = '<div class="loader">Стилист просыпается...</div>';
+    // Показываем что-то пользователю немедленно
+    loadSection('wardrobe'); 
 
+    // В фоновом режиме пытаемся разбудить бэкенд и авторизоваться
     try {
-      // 2. Ждем бэкенд (Render засыпает)
-      await window.waitForBackend();
-
-      // 3. Если мы в телеграме и токена НЕТ — логинимся
-      if (tg && tg.initData && !window.getToken()) {
-        const authData = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
-        if (authData && authData.access_token) {
-          window.setToken(authData.access_token);
+        await window.waitForBackend();
+        if (tg && tg.initData && !window.getToken()) {
+            const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+            if (res && res.access_token) {
+                window.setToken(res.access_token);
+                loadSection('wardrobe'); // Перезагружаем уже с данными
+            }
         }
-      }
     } catch (err) {
-      console.error("Ошибка при старте:", err);
-    } finally {
-      // 4. Загружаем гардероб в любом случае
-      loadSection('wardrobe');
+        console.warn("Backend startup issue:", err);
     }
   }
 
-  // Запуск
+  // Запуск при загрузке страницы
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startApp);
   } else {
@@ -67,11 +60,12 @@
 
   function initNavigation() {
     menuBtns.forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.onclick = (e) => {
         const section = e.currentTarget.dataset.section;
         loadSection(section);
-      });
+      };
     });
+    setupPalette();
   }
 
   function setupPalette() {
@@ -221,161 +215,46 @@
   // 3. ГЛАВНАЯ ЛОГИКА (loadSection)
   // =================================================================================
   
-  async function loadSection(section) {
-      // 1. Фиксируем, куда мы переходим
-      activeSection = section;
+async function loadSection(section) {
+    console.log("Loading section:", section);
+    content.innerHTML = '<div class="loader">Загрузка...</div>';
 
-      // 2. UI: Обновляем меню
-      menuBtns.forEach(btn => {
-          if (btn.dataset.section === section) btn.classList.add('active');
-          else btn.classList.remove('active');
-      });
+    if (section === 'wardrobe') {
+        try {
+            const items = await window.apiGet('/api/wardrobe/items');
+            if (!items || items.length === 0) {
+                content.innerHTML = '<div class="empty-msg">Гардероб пуст. Добавьте первую вещь!</div>';
+            } else {
+                content.innerHTML = '<div class="grid" id="wardrobe-grid"></div>';
+                const grid = document.getElementById('wardrobe-grid');
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'card-item';
+                    div.innerHTML = `
+                        <img src="${window.BACKEND_URL}${item.image_url}" alt="${item.name}">
+                        <p>${item.name}</p>
+                    `;
+                    grid.appendChild(div);
+                });
+            }
+        } catch (e) {
+            content.innerHTML = `<div class="error-msg">Ошибка бэкенда. Убедитесь, что сервер запущен.</div>`;
+        }
 
-      content.innerHTML = ''; // Очистка старого контента
-      
-      // --- ГАРДЕРОБ ---
-      if (section === 'wardrobe') {
-          content.innerHTML = `
-              <h2>👗 Мой гардероб</h2>
-              <div class="card-list" id="wardrobe-list"><p>Загрузка...</p></div>
-          `;
-          try {
-              const items = await window.apiGet('/api/wardrobe/items');
-              
-              // 💥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ 💥
-              // Если пока мы ждали сервер, пользователь нажал другую кнопку,
-              // activeSection изменилась. Мы не должны трогать DOM.
-              if (activeSection !== 'wardrobe') {
-                  console.log("Пользователь ушел со страницы загрузки, отмена рендера.");
-                  return; 
-              }
-
-              const list = document.getElementById('wardrobe-list');
-              // Проверка на случай если элемент все же исчез
-              if (!list) return;
-
-              list.innerHTML = ''; 
-              
-              if (items && items.length > 0) {
-                  items.forEach(item => {
-                      list.innerHTML += `
-                          <div class="card-item">
-                              <img src="${item.image_url}" alt="${item.name}" class="item-img">
-                              <div class="item-actions">
-                                <p class="item-name">${item.name}</p>
-                                <button class="small-btn delete-btn" data-item-id="${item.id}">🗑</button>
-                              </div>
-                          </div>
-                      `;
-                  });
-                  document.querySelectorAll('.delete-btn').forEach(btn => {
-                      btn.addEventListener('click', handleDeleteItem);
-                  });
-              } else {
-                   list.innerHTML = "<p>Гардероб пуст.</p>";
-              }
-          } catch (e) {
-              if (activeSection !== 'wardrobe') return;
-              content.innerHTML = `<h2>Ошибка</h2><p>${e.message}</p>`;
-          }
-
-      // --- ДОБАВИТЬ ---
-      } else if (section === 'populate') {
-          content.innerHTML = `
-              <h2>➕ Добавить вещь</h2>
-              <div class="tabs-header">
-                  <button class="tab-btn ${currentTab === 'marketplace' ? 'active' : ''}" data-tab="marketplace">🛍️ Маркетплейс</button>
-                  <button class="tab-btn ${currentTab === 'manual' ? 'active' : ''}" data-tab="manual">🖐 Ручное</button>
-              </div>
-
-              <form id="form-marketplace" class="tab-content ${currentTab === 'marketplace' ? 'active' : ''}" data-type="marketplace">
-                  <div class="form-group">
-                      <label>Название</label>
-                      <input type="text" name="name" class="input" placeholder="Например: Платье Zara" required>
-                  </div>
-                  <div class="form-group">
-                      <label>Ссылка на товар</label>
-                      <input type="url" name="url" class="input" placeholder="https://wildberries..." required>
-                  </div>
-                  <button type="submit" class="btn primary-btn" style="width:100%; margin-top:15px;">Добавить</button>
-              </form>
-
-              <form id="form-manual" class="tab-content ${currentTab === 'manual' ? 'active' : ''}" data-type="manual">
-                  <div class="form-group">
-                      <label>Название</label>
-                      <input type="text" name="name" class="input" placeholder="Например: Серая футболка" required>
-                  </div>
-                  <div class="form-group">
-                      <label>Фото (Файл или Ссылка)</label>
-                      <div class="input-combo">
-                          <button type="button" class="gallery-trigger-btn" id="gallery-btn">🖼️</button>
-                          <input type="text" id="manual-source-input" class="input-internal" placeholder="Вставьте ссылку...">
-                          <button type="button" class="clear-input-btn" id="clear-manual-btn">✖</button>
-                          <input type="file" id="hidden-file-input" accept="image/*" hidden>
-                      </div>
-                  </div>
-                  <button type="submit" class="btn primary-btn" style="width:100%; margin-top:15px;">Добавить</button>
-              </form>
-              <div id="add-item-message" class="message-box"></div>
-          `;
-
-          // Логика табов и инпутов
-          document.querySelectorAll('.tab-btn').forEach(btn => {
-              btn.addEventListener('click', (e) => {
-                  currentTab = e.target.dataset.tab;
-                  if (activeSection === 'populate') loadSection('populate');
-              });
-          });
-
-          const formMarket = document.getElementById('form-marketplace');
-          const formManual = document.getElementById('form-manual');
-          if(formMarket) formMarket.addEventListener('submit', handleAddItem);
-          if(formManual) formManual.addEventListener('submit', handleAddItem);
-
-          if (currentTab === 'manual') {
-              const galleryBtn = document.getElementById('gallery-btn');
-              const fileInput = document.getElementById('hidden-file-input');
-              const urlInput = document.getElementById('manual-source-input');
-              const clearBtn = document.getElementById('clear-manual-btn');
-
-              if(galleryBtn) galleryBtn.addEventListener('click', () => fileInput.click());
-              if(fileInput) fileInput.addEventListener('change', () => {
-                  if (fileInput.files.length > 0) {
-                      urlInput.value = fileInput.files[0].name;
-                      urlInput.readOnly = true;
-                      clearBtn.classList.add('visible');
-                  }
-              });
-              if(urlInput) urlInput.addEventListener('input', () => {
-                  if (urlInput.value.length > 0) clearBtn.classList.add('visible');
-                  else clearBtn.classList.remove('visible');
-              });
-              if(clearBtn) clearBtn.addEventListener('click', resetManualInput);
-          }
-
-      // --- ОБРАЗЫ ---
-      } else if (section === 'looks') {
-          content.innerHTML = `<h2>✨ Образы</h2><p>В разработке.</p>`;
-          
-      // --- ПРОФИЛЬ ---
-      } else if (section === 'profile') {
-    // Пытаемся достать ID из Telegram, если переменная USER_ID вдруг пуста
-    const displayID = (tg?.initDataUnsafe?.user?.id) || "Не определен (Локальный режим)";
-    
-    content.innerHTML = `
-        <div class="profile-container">
-            <h2 class="section-title">⚙️ Профиль</h2>
-            <div class="card-item" style="text-align: center; padding: 20px;">
-                <p style="color: var(--muted); margin-bottom: 8px;">Ваш Telegram ID:</p>
-                <code style="font-size: 1.2rem; color: var(--accent); font-weight: bold;">
-                    ${displayID}
-                </code>
+    } else if (section === 'profile') {
+        const displayID = (tg?.initDataUnsafe?.user?.id) || "Локальный пользователь";
+        content.innerHTML = `
+            <div class="profile-container" style="padding: 20px; text-align: center;">
+                <h2 style="margin-bottom: 20px;">⚙️ Профиль</h2>
+                <div class="card-item" style="padding: 15px; background: var(--card); border-radius: 12px;">
+                    <p style="color: var(--muted); font-size: 0.9rem;">Ваш ID:</p>
+                    <b style="font-size: 1.4rem; color: var(--accent);">${displayID}</b>
+                </div>
             </div>
-            <div style="margin-top: 20px; font-size: 0.8rem; color: var(--muted); text-align: center;">
-                v1.0.5-stable
-            </div>
-        </div>
-    `;
+        `;
+    } else {
+        content.innerHTML = `<h2>${section}</h2><p>Этот раздел скоро появится.</p>`;
+    }
   }
 
   // --- УТИЛИТЫ ---
