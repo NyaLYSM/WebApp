@@ -345,11 +345,26 @@
   }
   
   // Старт приложения
-  if (tg && tg.initData && !window.getToken()) {
-      authenticate().then(main).catch(main);
-  } else {
-      main();
+(async function startApp() {
+  try {
+    // 1. Ждём, пока backend проснётся
+    await window.waitForBackend();
+
+    // 2. Авторизация (если нужно)
+    if (tg && tg.initData && !window.getToken()) {
+      const ok = await authenticate();
+      console.log("TG auth:", ok ? "ok" : "failed");
+    }
+
+    // 3. Запуск UI
+    main();
+
+  } catch (e) {
+    console.error("❌ App start failed:", e);
+
+    alert(
+      "Сервер запускается чуть дольше обычного.\n" +
+      "Подождите несколько секунд и попробуйте снова."
+    );
   }
-
 })();
-
