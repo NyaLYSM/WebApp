@@ -359,8 +359,23 @@
           
       // --- ПРОФИЛЬ ---
       } else if (section === 'profile') {
-          content.innerHTML = `<h2>⚙️ Профиль</h2><div class="card-item"><p>ID: ${USER_ID}</p></div>`;
-      }
+    // Пытаемся достать ID из Telegram, если переменная USER_ID вдруг пуста
+    const displayID = (tg?.initDataUnsafe?.user?.id) || "Не определен (Локальный режим)";
+    
+    content.innerHTML = `
+        <div class="profile-container">
+            <h2 class="section-title">⚙️ Профиль</h2>
+            <div class="card-item" style="text-align: center; padding: 20px;">
+                <p style="color: var(--muted); margin-bottom: 8px;">Ваш Telegram ID:</p>
+                <code style="font-size: 1.2rem; color: var(--accent); font-weight: bold;">
+                    ${displayID}
+                </code>
+            </div>
+            <div style="margin-top: 20px; font-size: 0.8rem; color: var(--muted); text-align: center;">
+                v1.0.5-stable
+            </div>
+        </div>
+    `;
   }
 
   // --- УТИЛИТЫ ---
