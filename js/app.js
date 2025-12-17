@@ -493,10 +493,7 @@ async function handleAddItem(e) {
 // ---------------------------------------------------------------------------------
   // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
   // ---------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------
-  // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
-  // ---------------------------------------------------------------------------------
-async function loadSection(section) {
+  async function loadSection(section) {
       // Подсвечиваем активную кнопку
       menuBtns.forEach(btn => {
           if (btn.dataset.section === section) {
@@ -521,6 +518,7 @@ async function loadSection(section) {
               </div>
           `;
           try {
+              // Запрос к новому роуту /api/wardrobe/items
               const items = await window.apiGet('/api/wardrobe/items');
               
               const list = document.getElementById('wardrobe-list');
@@ -537,8 +535,8 @@ async function loadSection(section) {
                       `;
                   });
 
+                  // NOTE: handleDeleteItem должна быть определена в app.js
                   document.querySelectorAll('.delete-btn').forEach(btn => {
-                      // Убедитесь, что handleDeleteItem определена выше!
                       btn.addEventListener('click', handleDeleteItem);
                   });
               } else {
@@ -546,13 +544,14 @@ async function loadSection(section) {
               }
 
           } catch (e) {
-              // Критично: показываем ошибку 404
-              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: **${e.message || '404 Not Found (Проверьте бэкенд!)'}**</p>`;
+              // Обработка ошибок (теперь это не будет 404, если бэкенд запущен)
+              console.error("Wardrobe API Error:", e);
+              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: **${e.message || 'Проверьте бэкенд и базу данных!'}**</p>`;
           }
           
 
       } else if (section === 'populate') {
-          // Секция добавления вещей (Финальное исправление оболочек кнопок)
+          // Секция добавления вещей (ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ОБОЛОЧЕК КНОПОК)
           content.innerHTML = `
               <h2>➕ Добавить вещь</h2>
               <form id="add-item-form" class="form">
@@ -575,6 +574,7 @@ async function loadSection(section) {
           `;
 
           const form = document.getElementById('add-item-form');
+          // NOTE: handleAddItem должна быть определена выше в app.js
           if (form) {
               form.addEventListener('submit', handleAddItem); 
           }
@@ -585,7 +585,7 @@ async function loadSection(section) {
           content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
           
       } else if (section === 'profile') {
-          // Секция профиля (Упрощена: только ID)
+          // Секция профиля (УПРОЩЕНА: ТОЛЬКО ID)
           content.innerHTML = `<h2>⚙️ Профиль</h2>
               <p>Ваш уникальный ID:</p>
               <p class="profile-id-box"><span class="highlight">${USER_ID}</span></p>
