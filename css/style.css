@@ -396,6 +396,97 @@ body{
     line-height: 1;
 }
 
+.tabs-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+}
+
+/* --- COMPLEX INPUT (Gallery & Clear) --- */
+.input-combo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: color-mix(in srgb, var(--card) 92%, transparent 8%);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.input-combo:focus-within {
+    border-color: var(--accent);
+}
+
+/* Кнопка галереи слева */
+.gallery-trigger-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    padding: 0 12px;
+    cursor: pointer;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    height: 44px;
+    line-height: 44px;
+    transition: transform 0.1s;
+}
+.gallery-trigger-btn:active {
+    transform: scale(0.95);
+}
+
+/* Поле ввода внутри комбо */
+.input-combo .input-internal {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 12px;
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+}
+
+/* Кнопка очистки (крестик) справа внутри */
+.clear-input-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    padding: 0 12px;
+    cursor: pointer;
+    display: none; /* Скрыт по умолчанию */
+}
+.clear-input-btn.visible {
+    display: block;
+}
+
+/* Скрытые формы */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .hidden {
     display: none !important;
 }
