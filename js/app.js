@@ -496,7 +496,7 @@ async function handleAddItem(e) {
 // ---------------------------------------------------------------------------------
   // ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ СЕКЦИЙ (loadSection)
   // ---------------------------------------------------------------------------------
-  async function loadSection(section) {
+async function loadSection(section) {
       // Подсвечиваем активную кнопку
       menuBtns.forEach(btn => {
           if (btn.dataset.section === section) {
@@ -521,7 +521,6 @@ async function handleAddItem(e) {
               </div>
           `;
           try {
-              // Долгая загрузка здесь - это, скорее всего, холодный старт Render
               const items = await window.apiGet('/api/wardrobe/items');
               
               const list = document.getElementById('wardrobe-list');
@@ -539,7 +538,7 @@ async function handleAddItem(e) {
                   });
 
                   document.querySelectorAll('.delete-btn').forEach(btn => {
-                      // Убедитесь, что эта функция (handleDeleteItem) определена выше
+                      // Убедитесь, что handleDeleteItem определена выше!
                       btn.addEventListener('click', handleDeleteItem);
                   });
               } else {
@@ -547,13 +546,13 @@ async function handleAddItem(e) {
               }
 
           } catch (e) {
-              // Если загрузка не удалась, показываем ошибку
-              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: ${e.message || e}</p>`;
+              // Критично: показываем ошибку 404
+              content.innerHTML = `<h2>Ошибка загрузки</h2><p>Не удалось загрузить гардероб: **${e.message || '404 Not Found (Проверьте бэкенд!)'}**</p>`;
           }
           
 
       } else if (section === 'populate') {
-          // Секция добавления вещей
+          // Секция добавления вещей (Финальное исправление оболочек кнопок)
           content.innerHTML = `
               <h2>➕ Добавить вещь</h2>
               <form id="add-item-form" class="form">
@@ -586,21 +585,11 @@ async function handleAddItem(e) {
           content.innerHTML = `<h2>✨ Создать образ</h2><p>Функционал создания образов в разработке.</p>`;
           
       } else if (section === 'profile') {
-          // Секция профиля (Упрощена и безопасна)
+          // Секция профиля (Упрощена: только ID)
           content.innerHTML = `<h2>⚙️ Профиль</h2>
-              <p>Ваши настройки и информация о системе.</p>
-              <p>ID пользователя Telegram: ${USER_ID}</p>
-              <p class="form-hint">Выход и сброс авторизации доступны через настройки Telegram Web App.</p>
-              <button class="btn secondary-btn" id="logout-btn-debug">Сбросить авторизацию (Debug)</button>
+              <p>Ваш уникальный ID:</p>
+              <p class="profile-id-box"><span class="highlight">${USER_ID}</span></p>
           `;
-          
-          // Оставляем Debug-кнопку для возможности сброса токена, если нужно
-          document.getElementById('logout-btn-debug').addEventListener('click', () => {
-             if (confirm("Вы уверены, что хотите сбросить токен авторизации? Приложение перезагрузится.")) {
-                 window.clearToken();
-                 window.location.reload();
-             }
-          });
           
       } else {
           loadSection('wardrobe');
