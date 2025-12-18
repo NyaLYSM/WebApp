@@ -1,54 +1,61 @@
 // js/api.js
 (function () {
+  // Настройка URL бэкенда
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
   }
 
+  // Управление токеном
   window.getToken = () => localStorage.getItem("access_token");
   window.setToken = (t) => localStorage.setItem("access_token", t);
   window.clearToken = () => localStorage.removeItem("access_token");
 
+  // Формирование заголовков
   function getHeaders(json = true) {
     const h = {};
     const token = window.getToken();
-    // ИСПРАВЛЕНИЕ: Добавляем заголовок только если токен реально существует и он не пустой
-    if (token && token !== "undefined" && token !== "null") {
-      h.Authorization = `Bearer ${token}`;
+    // ФИКС: Отправляем Bearer только если токен есть и он не является строкой "null"/"undefined"
+    if (token && token !== "null" && token !== "undefined") {
+      h["Authorization"] = `Bearer ${token}`;
     }
     if (json) h["Content-Type"] = "application/json";
     return h;
   }
 
+  // Централизованная обработка ошибок
   async function handleApiError(res) {
     if (res.status === 401) {
-      console.warn("Сессия истекла или токен неверный");
+      console.warn("Сессия истекла (401). Токен очищен.");
       window.clearToken();
-      // Не кидаем исключение здесь, чтобы старт приложения (startApp) мог продолжить работу
-      return; 
+      return; // Не кидаем ошибку, чтобы приложение не падало
     }
     if (!res.ok) {
       const details = await res.text();
-      throw new Error(`Ошибка ${res.status}: ${details}`);
+      throw new Error(`Ошибка API ${res.status}: ${details}`);
     }
   }
 
+  // Ожидание прогрева сервера (Render)
   window.waitForBackend = async () => {
-    try {
-      const res = await fetch(window.BACKEND_URL + "/health", { method: 'GET' });
-      return res.ok;
-    } catch (e) {
-      console.log("Ожидание пробуждения сервера...");
-      return false;
+    console.log("Проверка связи с сервером...");
+    for (let i = 0; i < 5; i++) {
+      try {
+        const res = await fetch(window.BACKEND_URL + "/health");
+        if (res.ok) return true;
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 2000)); // Ждем 2 сек перед повтором
     }
+    return false;
   };
 
+  // Методы запросов
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
     const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { 
       headers: getHeaders(false) 
     });
     await handleApiError(res);
-    return res.ok ? res.json() : []; // Возвращаем пустой массив при ошибке (например 401)
+    return res.ok ? res.json() : [];
   };
 
   window.apiPost = async (path, payload = {}) => {
@@ -61,16 +68,6 @@
     return res.ok ? res.json() : null;
   };
 
-  window.apiUpload = async (path, formData) => {
-    const res = await fetch(window.BACKEND_URL + path, {
-      method: "POST",
-      headers: getHeaders(false),
-      body: formData
-    });
-    await handleApiError(res);
-    return res.json();
-  };
-
   window.apiDelete = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
     const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), {
@@ -78,6 +75,6 @@
       headers: getHeaders(false)
     });
     await handleApiError(res);
-    return res.json();
+    return res.ok ? res.json() : null;
   };
 })();
