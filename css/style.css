@@ -1,5 +1,5 @@
 :root {
-  --radius: 16px; /* Более скругленные углы для стекла */
+  --radius: 16px;
   --transition: 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   --bg: #0b0b12;
   --card: rgba(30, 30, 35, 0.6);
@@ -7,9 +7,11 @@
   --muted: rgba(255, 255, 255, 0.6);
   --accent: #6c5ce7;
   --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
   --container-max: 480px;
 }
+
+/* --- CRITICAL FIX: Исправляет баг с незакрывающимся окном --- */
+[hidden] { display: none !important; }
 
 /* Reset */
 * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -34,11 +36,10 @@ body {
   display: flex; flex-direction: column; min-height: 100vh;
 }
 
-/* Typography */
 h2, h3 { margin: 0 0 12px 0; font-weight: 600; text-align: center; }
 p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: center; }
 
-/* --- GLASSMORPHISM CORE --- */
+/* --- GLASSMORPHISM --- */
 .glass-card {
   background: rgba(20, 20, 25, 0.4);
   backdrop-filter: blur(14px);
@@ -51,7 +52,7 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
   transition: transform var(--transition);
 }
 
-/* LIQUID BUTTONS */
+/* BUTTONS */
 .btn {
   position: relative;
   width: 100%;
@@ -69,7 +70,6 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
   font-size: 15px;
 }
 
-/* Эффект переливания (Liquid) */
 .btn::before {
   content: '';
   position: absolute;
@@ -82,7 +82,7 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
 .btn:active { transform: scale(0.98); }
 
 .liquid-glass {
-  background: rgba(255, 255, 255, 0.08); /* Прозрачная кнопка */
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
 }
 .liquid-glass:hover {
@@ -90,7 +90,7 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
   border-color: rgba(255,255,255,0.3);
 }
 
-/* Menu Buttons */
+/* Menu */
 .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
 .menu .btn { min-height: 54px; }
 .menu .btn.active { 
@@ -106,95 +106,58 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
 /* Inputs */
 .input-wrapper { margin-bottom: 16px; width: 100%; }
 .input {
-  width: 100%;
-  padding: 14px 16px;
+  width: 100%; padding: 14px 16px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  color: var(--text);
-  font-size: 15px;
-  transition: var(--transition);
+  color: var(--text); font-size: 15px; transition: var(--transition);
 }
-.input:focus {
-  border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.4);
-}
+.input:focus { border-color: var(--accent); background: rgba(0, 0, 0, 0.4); }
 .input::placeholder { color: rgba(255,255,255,0.3); }
 
-/* --- SECTIONS --- */
-
 /* Profile */
-.profile-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
+.profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .profile-avatar {
   width: 80px; height: 80px;
-  background: linear-gradient(135deg, var(--accent), var(--wave-end));
+  background: linear-gradient(135deg, var(--accent), var(--wave-end)); /* Теперь тоже зависит от темы */
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: bold;
-  margin-bottom: 16px;
+  font-size: 32px; font-weight: bold; margin-bottom: 16px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.3);
   border: 2px solid rgba(255,255,255,0.1);
 }
 .stats-row { margin-top: 16px; display: flex; gap: 20px; justify-content: center; }
-.stat-item small { color: var(--muted); display: block; margin-top: 4px; }
 
-/* Populate (Add) */
+/* Populate */
 .populate-container { display: flex; flex-direction: column; gap: 16px; }
 .mode-switch {
   display: flex; padding: 4px; gap: 4px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 14px;
+  background: rgba(0,0,0,0.3); border-radius: 14px;
 }
 .mode-switch button {
   flex: 1; padding: 10px; border: none; background: transparent; color: var(--muted);
   border-radius: 10px; cursor: pointer; transition: var(--transition);
 }
 .mode-switch button.active {
-  background: rgba(255,255,255,0.1); color: #fff; shadow: 0 2px 8px rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.1); color: #fff;
 }
-
-.file-row {
-  display: flex; gap: 10px; align-items: center;
-}
+.file-row { display: flex; gap: 10px; align-items: center; }
 .file-label {
-  flex-shrink: 0;
-  width: 50px; height: 50px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; cursor: pointer;
-  transition: var(--transition);
+  flex-shrink: 0; width: 50px; height: 50px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer; transition: var(--transition);
 }
-.file-label:hover { background: rgba(255,255,255,0.1); }
 
-/* Wardrobe Grid */
-.wardrobe-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-}
-.wardrobe-item {
-  position: relative;
-  padding: 8px;
-  display: flex; flex-direction: column;
-}
+/* Wardrobe */
+.wardrobe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.wardrobe-item { position: relative; padding: 8px; display: flex; flex-direction: column; }
 .wardrobe-item img {
   width: 100%; aspect-ratio: 3/4; object-fit: cover;
-  border-radius: 10px; margin-bottom: 8px;
-  background: rgba(0,0,0,0.2);
+  border-radius: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.2);
 }
-.item-info {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 13px; padding: 0 4px;
-}
-.delete-btn {
-  background: transparent; border: none; color: #ff7675; cursor: pointer;
-  font-size: 16px; padding: 4px;
-}
+.item-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 0 4px; }
+.delete-btn { background: transparent; border: none; color: #ff7675; cursor: pointer; font-size: 16px; padding: 4px; }
 
 /* Palette Modal */
 .palette-overlay {
@@ -202,29 +165,36 @@ p { margin: 0 0 16px 0; color: var(--muted); line-height: 1.5; text-align: cente
   background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
   z-index: 999;
   display: flex; align-items: center; justify-content: center;
+  /* Важно: display:flex применяется только когда нет hidden, благодаря [hidden] {display:none !important} */
 }
 .palette-modal {
   width: 90%; max-width: 360px;
   background: #15151a; border: 1px solid var(--glass-border);
   border-radius: 20px; padding: 20px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column;
 }
 .palette-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;
 }
 .p-item {
-  height: 60px; border-radius: 12px; cursor: pointer;
+  height: 50px; border-radius: 12px; cursor: pointer;
   position: relative; overflow: hidden;
-  border: 2px solid transparent;
-  transition: transform 0.2s;
+  border: 2px solid transparent; transition: transform 0.2s;
 }
 .p-item.active { border-color: #fff; transform: scale(1.05); }
-.p-item.auto-theme {
-  background: linear-gradient(45deg, #333, #666);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: bold; color: #fff; font-size: 12px;
+
+/* Кнопка авто-темы отдельным блоком */
+.btn-auto-toggle {
+    margin-top: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--accent); /* Цвет границы зависит от темы */
+    color: var(--accent);            /* Цвет текста зависит от темы */
+}
+.btn-auto-toggle:hover {
+    background: var(--accent);
+    color: #fff;
 }
 
-/* Helpers */
 .loader { padding: 40px; text-align: center; color: var(--muted); }
 .hidden { display: none !important; }
