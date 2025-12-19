@@ -16,13 +16,13 @@
         constructor() { this.reset(); }
         reset() {
             this.angle = Math.random() * Math.PI * 2;
-            this.radius = Math.random() * w * 0.6; // Чуть шире радиус
+            this.radius = Math.random() * w * 0.7; // Широкий размах
             this.y = Math.random() * h;
-            this.speed = 0.005 + Math.random() * 0.01;
-            this.vY = 1.5 + Math.random() * 1.5; // Чуть быстрее
-            this.size = 2 + Math.random() * 3;   // Чуть крупнее
+            this.speed = 0.002 + Math.random() * 0.008;
+            this.vY = 0.5 + Math.random() * 1.5;
+            this.size = 1.5 + Math.random() * 2.5;
             
-            // Пытаемся взять цвет, если нет - белый
+            // Получаем акцентный цвет из CSS
             const style = getComputedStyle(document.documentElement);
             const accent = style.getPropertyValue('--accent').trim();
             this.color = accent || "#6c5ce7";
@@ -30,12 +30,10 @@
         draw() {
             this.angle += this.speed;
             this.y -= this.vY;
-            if (this.y < -10) this.reset();
+            if (this.y < -20) this.reset();
             
-            // Вихрь
             const x = w/2 + Math.cos(this.angle) * this.radius * (this.y / h);
-            // Плавное исчезновение к верху
-            const opacity = (this.y / h) * 0.4;
+            const opacity = (this.y / h) * 0.5; // Чем выше, тем прозрачнее
             
             ctx.beginPath();
             ctx.fillStyle = this.color;
@@ -45,22 +43,22 @@
         }
     }
 
-    // Создаем частицы
     function initParticles() {
         particles = [];
-        for(let i=0; i<120; i++) particles.push(new Particle());
+        for(let i=0; i<100; i++) particles.push(new Particle());
     }
     initParticles();
 
     function animate() {
+        // Очищаем полностью (прозрачный фон)
         ctx.clearRect(0, 0, w, h);
-        // Без fillRect для фона, фон задается через CSS body
+        
+        // Рисуем частицы
         particles.forEach(p => p.draw());
         requestAnimationFrame(animate);
     }
     animate();
 
-    // Экспорт для обновления цвета при смене темы
     window.initWaves = () => {
         resize();
         initParticles();
