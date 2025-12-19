@@ -9,41 +9,43 @@
    window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com"
   </script>
   
-  <link rel="stylesheet" href="css/style.css?v=15"> 
+  <link rel="stylesheet" href="css/style.css?v=20"> 
 </head>
 <body>
 
-  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <canvas id="bgCanvas"></canvas>
 
-  <div class="container" role="main">
+  <div class="container">
     <div class="top-row">
-      <h1 class="title">Твой гардероб</h1>
-      <button id="palette-btn" class="small-btn" aria-label="Палитра">🎨</button>
+      <h1 class="title">Wardrobe</h1>
+      <button id="palette-btn" aria-label="Палитра">🎨</button>
     </div>
 
-    <nav class="menu">
-      <button class="btn" data-section="populate">➕ Добавить</button>
-      <button class="btn" data-section="wardrobe">👗 Гардероб</button>
-      <button class="btn" data-section="looks">✨ Образы</button>
-      <button class="btn" data-section="profile">⚙️ Профиль</button>
+    <nav class="menu" id="nav-menu">
+      <div class="menu-indicator" id="menu-wave"></div>
+      
+      <button class="btn-nav" data-section="populate">Добавить</button>
+      <button class="btn-nav" data-section="wardrobe">Гардероб</button>
+      <button class="btn-nav" data-section="looks">Образы</button>
+      <button class="btn-nav" data-section="profile">Профиль</button>
     </nav>
 
-    <main id="content" class="card"></main>
+    <main id="content" class="card" style="background: transparent; box-shadow: none; padding: 0;"></main>
   </div>
 
   <div id="palette-overlay" class="palette-overlay" hidden>
-    <div class="palette-card"> <div class="palette-header" style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">Цвета</h3>
-            <button id="palette-close" class="small-btn" aria-label="Закрыть">✖</button>
+    <div class="palette-modal"> 
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">Стиль</h3>
+            <button id="palette-close" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
         </div>
         <div class="palette-grid" id="palette-grid"></div>
-        <button id="palette-auto" class="btn secondary-btn" style="width:100%; margin-top:10px;">Сбросить (Авто)</button>
+        <button id="palette-auto" class="btn" style="margin-bottom:0;">Авто (Системная)</button>
     </div>
   </div>
   
-  <script src="js/waves.js?v=16"></script> 
-  <script src="js/api.js?v=16"></script> 
-  <script src="js/app.js?v=16"></script> 
+  <script src="js/vortex.js?v=20"></script> 
+  <script src="js/api.js?v=20"></script> 
+  <script src="js/app.js?v=20"></script> 
 </body>
 </html>
-
