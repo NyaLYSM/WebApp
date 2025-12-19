@@ -327,3 +327,25 @@ body.caramel-buttons .btn {
 .file-input.has-file .file-reset {
   display: block;
 }
+
+.style-switch {
+  display: flex;
+  gap: 8px;
+  margin: 15px 0 10px;
+}
+
+.style-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.style-btn.active {
+  color: #fff;
+  border-color: var(--accent);
+}
