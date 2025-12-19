@@ -255,12 +255,17 @@
         </div>
         
         <div class="input-wrapper file-row">
-            <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку (если есть)">
-            
-            <label class="gallery-btn">
-                🖼️ <input type="file" id="manual-file" hidden accept="image/*" onchange="document.getElementById('manual-img-url').value = 'Файл: ' + (this.files[0]?.name || '')">
-            </label>
+          <div class="file-input">
+            <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
+            <span class="file-reset" onclick="window.resetFile()">✕</span>
+          </div>
+
+          <label class="gallery-btn">
+            🖼️
+            <input type="file" id="manual-file" hidden accept="image/*">
+          </label>
         </div>
+
         
         <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>
       `;
@@ -369,6 +374,7 @@
 
   startApp();
 })();
+
 
 
 
