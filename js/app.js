@@ -61,6 +61,13 @@
     if (window.initWaves) window.initWaves();
   }
 
+  function toggleButtonStyle(mode) {
+    document.body.classList.toggle('caramel-buttons', mode === 'caramel');
+    localStorage.setItem('buttonStyle', mode);
+    document.querySelectorAll('.texture-btn')
+      .forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  }
+  
   function toggleTexture(mode) {
       // mode: 'matte' | 'glossy'
       if (mode === 'glossy') {
@@ -109,6 +116,13 @@
         // Не закрываем сразу, вдруг хочет текстуру сменить
       };
     });
+
+    document.querySelectorAll('.texture-btn').forEach(btn => {
+      btn.onclick = () => toggleButtonStyle(btn.dataset.mode);
+    });
+
+    toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
+
     
     // Кнопки текстур
     textureBtns.forEach(btn => {
@@ -336,4 +350,5 @@
 
   startApp();
 })();
+
 
