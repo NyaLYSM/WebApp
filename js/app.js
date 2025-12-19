@@ -207,10 +207,10 @@
       // ПОМЕНЯЛИ МЕСТАМИ: Теперь Сначала Название, потом Ссылка (так просил пользователь)
       container.innerHTML = `
         <div class="input-wrapper">
-          <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
+          <input type="text" id="market-name" class="input" placeholder="Название (Джинсы)">
         </div>
         <div class="input-wrapper">
-          <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
+          <input type="text" id="market-url" class="input" placeholder="Ссылка (WB / Ozon) и др.">
         </div>
         <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
       `;
@@ -336,3 +336,4 @@
 
   startApp();
 })();
+
