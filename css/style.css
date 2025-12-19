@@ -255,3 +255,18 @@ body.glossy-mode .menu-indicator {
 
 .loader { padding: 40px; text-align: center; color: var(--muted); }
 
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card,
+.palette-modal {
+  animation: fadeUp 0.35s cubic-bezier(0.25,0.8,0.25,1);
+}
