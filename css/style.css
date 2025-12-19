@@ -1,11 +1,11 @@
 :root {
   --radius: 16px;
-  --bg-color: #0b0b12; /* Цвет для fallback */
+  --bg-color: #0b0b12;
   --card-bg: #15151a;
   --text: #ffffff;
   --muted: #8b8b99;
   --accent: #6c5ce7;
-  --accent-dark: #483d8b; /* Цвет 3D тени */
+  --accent-dark: #483d8b;
   --border: rgba(255, 255, 255, 0.08);
   --shadow-card: 0 20px 40px -5px rgba(0, 0, 0, 0.6);
   --container-max: 480px;
@@ -22,18 +22,16 @@ body {
   color: var(--text);
   overflow-x: hidden;
   font-size: 15px;
-  /* ВАЖНО: Фон прозрачный, чтобы было видно вихрь сзади */
-  background: transparent; 
+  background: transparent; /* Видно вихрь */
 }
 
 /* Background Canvas */
 #bgCanvas {
   position: fixed; inset: 0; width: 100%; height: 100%; 
-  z-index: -1; /* Лежит позади всего */
-  background-color: var(--bg-color); /* Сам канвас имеет базовый цвет */
+  z-index: -1; 
+  background-color: var(--bg-color);
 }
 
-/* Container */
 .container {
   max-width: var(--container-max); margin: 0 auto; padding: 16px;
   display: flex; flex-direction: column; min-height: 100vh;
@@ -46,96 +44,120 @@ body {
 }
 .title { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
 
-/* --- 3D GRADIENT BUTTONS --- */
+/* --- BUTTONS BASE --- */
 .btn {
   position: relative;
   width: 100%;
   padding: 16px;
   border-radius: 14px;
   border: none;
-  
-  /* Градиент + Блеск */
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-  box-shadow: 
-    inset 0 1px 0 rgba(255,255,255,0.3), /* Блик сверху */
-    0 6px 0 var(--accent-dark),          /* 3D Тень снизу (статичная часть) */
-    0 10px 20px rgba(0,0,0,0.4);         /* Тень общая */
-    
+  background: var(--accent); /* Fallback */
   color: #fff;
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s; /* Очень быстрая анимация нажатия */
-  margin-bottom: 6px; /* Место под ход кнопки */
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
+  margin-bottom: 8px;
+  overflow: hidden; /* Важно для бликов */
 }
 
-/* Эффект нажатия (Active) */
-.btn:active {
-  transform: translateY(6px); /* Опускаем кнопку на высоту тени */
+/* 1. MATTE MODE (Стандартный 3D) */
+body:not(.glossy-mode) .btn {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
   box-shadow: 
-    inset 0 1px 0 rgba(255,255,255,0.1),
-    0 0 0 var(--accent-dark),    /* Тень исчезает (сплющивается) */
-    0 2px 5px rgba(0,0,0,0.4);
+    inset 0 1px 0 rgba(255,255,255,0.2), 
+    0 6px 0 var(--accent-dark),          
+    0 10px 20px rgba(0,0,0,0.4);
 }
-.btn:disabled {
-  filter: grayscale(0.8); opacity: 0.7; cursor: not-allowed;
-}
-
-/* Кнопка палитры (стилизуем под основные, но маленькая) */
-#palette-btn {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--card-bg), #2a2a35);
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 0 #111;
-  color: #fff; font-size: 20px;
-  display: flex; align-items: center; justify-content: center;
-  transition: 0.1s; cursor: pointer;
-}
-#palette-btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 0 0 #111;
+body:not(.glossy-mode) .btn:active {
+  transform: translateY(6px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 var(--accent-dark);
 }
 
-/* --- NAVIGATION MENU WITH WAVE --- */
+/* 2. GLOSSY / CARAMEL MODE (Карамель) */
+body.glossy-mode .btn {
+  /* Сложный градиент для объема */
+  background: radial-gradient(100% 100% at 50% 0%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%),
+              linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  
+  /* Внутреннее свечение и глубокая тень */
+  box-shadow: 
+    inset 0 2px 1px rgba(255,255,255,0.7), /* Блик сверху */
+    inset 0 -2px 5px rgba(0,0,0,0.2),      /* Тень внутри снизу */
+    0 8px 20px rgba(0, 0, 0, 0.3),         /* Тень внешняя мягкая */
+    0 4px 0 rgba(0,0,0,0.2);               /* Тень жесткая (небольшая) */
+    
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Блик "Линза" для карамели */
+body.glossy-mode .btn::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
+  border-radius: 12px 12px 40% 40% / 12px 12px 20% 20%; /* Форма линзы */
+  pointer-events: none;
+}
+
+body.glossy-mode .btn:active {
+  transform: scale(0.97); /* В карамели нажимается мягко "внутрь" */
+  box-shadow: inset 0 3px 10px rgba(0,0,0,0.3);
+}
+
+
+/* --- NAVIGATION MENU (FIXED) --- */
 .menu { 
   position: relative;
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; 
-  margin-bottom: 24px; 
-  background: rgba(0,0,0,0.2);
-  padding: 6px; border-radius: 16px;
+  display: grid; grid-template-columns: repeat(2, 1fr); 
+  /* Убрали gap в гриде, будем управлять отступами внутри */
+  padding: 6px; 
+  background: rgba(0,0,0,0.25);
+  border-radius: 18px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Бегущая волна (индикатор) */
+/* Индикатор-слайдер */
 .menu-indicator {
   position: absolute;
-  top: 6px; left: 6px;
-  height: calc(100% - 12px);
-  width: calc(50% - 8px); /* Половина минус отступы */
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  pointer-events: none;
+  background: var(--card-bg); /* Теперь он цвета карточки, а не белый */
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   z-index: 0;
-  box-shadow: 0 0 15px rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+/* В Glossy режиме индикатор тоже блестит */
+body.glossy-mode .menu-indicator {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .menu .btn-nav {
   position: relative; z-index: 1;
-  background: transparent;
-  border: none; color: var(--muted);
-  font-weight: 600; padding: 12px;
-  border-radius: 12px; cursor: pointer;
+  background: transparent; border: none; 
+  color: var(--muted);
+  font-weight: 600; 
+  height: 46px; /* Фиксированная высота */
+  display: flex; align-items: center; justify-content: center; /* ЦЕНТРИРОВАНИЕ */
+  cursor: pointer;
   transition: color 0.2s;
   font-size: 14px;
+  width: 100%;
 }
-.menu .btn-nav.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
 
-/* --- CARDS (Clean Volume) --- */
+.menu .btn-nav.active { 
+  color: #fff; 
+  /* Убрали font-weight bold чтобы не скакал текст */
+  text-shadow: 0 0 15px rgba(255,255,255,0.4);
+}
+
+
+/* --- CARDS & INPUTS --- */
 .card {
   background: var(--card-bg);
-  /* Убрали границы, оставили только тень для объема */
   box-shadow: var(--shadow-card);
   border-radius: var(--radius);
   padding: 24px;
@@ -143,7 +165,6 @@ body {
   position: relative;
 }
 
-/* Inputs */
 .input-wrapper { margin-bottom: 14px; width: 100%; }
 .input {
   width: 100%; padding: 16px;
@@ -155,15 +176,20 @@ body {
 }
 .input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2); }
 
-/* Profile */
+/* --- OTHER ELEMENTS --- */
+#palette-btn {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: #fff; font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
 .profile-card { text-align: center; }
 .profile-name { font-size: 26px; font-weight: 800; margin-bottom: 4px; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
 .profile-id { color: var(--muted); font-family: monospace; margin-bottom: 20px; }
-.stats-row { display: flex; gap: 12px; justify-content: center; }
-.stat-box { 
-  background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 10px;
-  font-weight: 600; font-size: 13px;
-}
 
 /* Populate Tabs */
 .mode-switch {
@@ -175,20 +201,7 @@ body {
 }
 .mode-switch button.active { background: var(--card-bg); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-/* Add Forms Grid */
-.file-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
-.gallery-btn {
-  width: 52px; height: 52px; /* Под высоту инпута */
-  background: linear-gradient(135deg, #2d3436, #000);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; cursor: pointer;
-  transition: 0.2s;
-}
-.gallery-btn:active { transform: scale(0.95); }
-
-/* Wardrobe Grid */
+/* Wardrobe */
 .wardrobe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .wardrobe-item { 
   background: var(--card-bg); border-radius: 16px; overflow: hidden;
@@ -202,7 +215,7 @@ body {
 .item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
 .delete-icon { color: #ff5e57; background: none; border: none; font-size: 18px; cursor: pointer; }
 
-/* Palette Modal */
+/* MODAL & TEXTURE SWITCHER */
 .palette-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999;
   display: flex; align-items: center; justify-content: center;
@@ -211,15 +224,31 @@ body {
 .palette-modal {
   width: 90%; max-width: 360px;
   background: #18181f; 
-  box-shadow: 0 25px 50px rgba(0,0,0,0.7); /* Глубокая тень */
+  box-shadow: 0 25px 50px rgba(0,0,0,0.7);
   border-radius: 20px; padding: 24px;
 }
-.palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+.palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
 .p-item {
   height: 50px; border-radius: 12px; cursor: pointer;
-  border: 2px solid transparent; transition: transform 0.2s;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  border: 2px solid transparent; transform: scale(1); transition: 0.1s;
 }
-.p-item:active { transform: scale(0.92); }
+.p-item.active { border-color: #fff; transform: scale(1.05); }
 
-.loader { padding: 40px; text-align: center; color: var(--muted); font-weight: 500; }
+.texture-switch {
+    display: flex; background: #000; padding: 4px; border-radius: 12px; margin-top: 15px;
+}
+.texture-btn {
+    flex: 1; padding: 10px; color: var(--muted); background: transparent; border: none; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 600;
+}
+.texture-btn.active { background: #333; color: #fff; }
+
+.gallery-btn {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #2d3436, #000);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer;
+}
+
+.loader { padding: 40px; text-align: center; color: var(--muted); }
