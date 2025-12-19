@@ -33,20 +33,20 @@
     <main id="content" class="card" style="background: transparent; box-shadow: none; padding: 0;"></main>
   </div>
 
-  <div id="palette-overlay" class="palette-overlay" hidden>
+<div id="palette-overlay" class="palette-overlay" hidden>
     <div class="palette-modal"> 
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;">Стиль</h3>
             <button id="palette-close" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
         </div>
+        
         <div class="palette-grid" id="palette-grid"></div>
-        <button id="palette-auto" class="btn" style="margin-bottom:0;">Авто (Системная)</button>
+
+        <div class="texture-switch">
+            <button class="texture-btn active" data-mode="matte">Матовый</button>
+            <button class="texture-btn" data-mode="glossy">Карамель</button>
+        </div>
+
+        <button id="palette-auto" class="btn" style="margin-top:15px; margin-bottom:0; background:rgba(255,255,255,0.05);">Авто (Цвет)</button>
     </div>
   </div>
-  
-  <script src="js/vortex.js?v=20"></script> 
-  <script src="js/api.js?v=20"></script> 
-  <script src="js/app.js?v=20"></script> 
-</body>
-</html>
-
