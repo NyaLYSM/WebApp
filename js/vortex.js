@@ -1,9 +1,10 @@
-// js/vortex.js
+// js/vortex.js - ENERGY STORM EDITION
 (function() {
     const canvas = document.getElementById("bgCanvas");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    let w, h, particles = [];
+    let w, h;
+    let strands = [];
 
     function resize() {
         w = canvas.width = window.innerWidth;
@@ -12,55 +13,124 @@
     window.addEventListener("resize", resize);
     resize();
 
-    class Particle {
-        constructor() { this.reset(); }
-        reset() {
-            this.angle = Math.random() * Math.PI * 2;
-            this.radius = Math.random() * w * 0.7; // Широкий размах
-            this.y = Math.random() * h;
-            this.speed = 0.002 + Math.random() * 0.008;
-            this.vY = 0.5 + Math.random() * 1.5;
-            this.size = 1.5 + Math.random() * 2.5;
-            
-            // Получаем акцентный цвет из CSS
-            const style = getComputedStyle(document.documentElement);
-            const accent = style.getPropertyValue('--accent').trim();
-            this.color = accent || "#6c5ce7";
+    // Класс для "Молнии" / Ломаной линии
+    class LightningStrand {
+        constructor() {
+            this.reset();
+            // Начинаем со случайной высоты, чтобы не все снизу летели сразу
+            this.yProgress = Math.random(); 
         }
-        draw() {
-            this.angle += this.speed;
-            this.y -= this.vY;
-            if (this.y < -20) this.reset();
+
+        reset() {
+            this.yProgress = 0;
+            this.speed = 0.001 + Math.random() * 0.003; // Медленное поднятие
+            this.angleOffset = Math.random() * Math.PI * 2;
+            this.radiusBase = w * 0.4; // Ширина воронки внизу
             
-            const x = w/2 + Math.cos(this.angle) * this.radius * (this.y / h);
-            const opacity = (this.y / h) * 0.5; // Чем выше, тем прозрачнее
+            // Цвет берем из CSS
+            const style = getComputedStyle(document.documentElement);
+            this.color = style.getPropertyValue('--accent').trim() || "#6c5ce7";
+            
+            // Параметры "ломаности"
+            this.segments = [];
+            this.generateSegments();
+        }
+
+        generateSegments() {
+            // Генерируем форму линии (относительно центра линии)
+            this.segments = [];
+            let currentX = 0;
+            // Создаем 10 сегментов дрожания
+            for(let i=0; i<15; i++) {
+                this.segments.push({
+                    x: (Math.random() - 0.5) * 30, // Дрожание по горизонтали
+                    y: i * 20 // Шаг по вертикали локально
+                });
+            }
+        }
+
+        update() {
+            this.yProgress += this.speed;
+            if (this.yProgress > 1.2) this.reset();
+            
+            // Вращение
+            this.angleOffset += 0.02; 
+        }
+
+        draw() {
+            // Основная математика вихря
+            // Чем выше (yProgress -> 1), тем уже радиус
+            const currentYBase = h - (this.yProgress * h); // Движемся снизу вверх
+            
+            // Радиус сужается к верху
+            const currentRadius = this.radiusBase * (1 - this.yProgress * 0.6);
+            
+            // Центр воронки
+            const cx = w / 2;
             
             ctx.beginPath();
-            ctx.fillStyle = this.color;
-            ctx.globalAlpha = opacity;
-            ctx.arc(x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
+            
+            // Рисуем ломаную линию
+            for (let i = 0; i < this.segments.length; i++) {
+                const seg = this.segments[i];
+                
+                // Координата сегмента в 3D-пространстве вихря
+                // Y уменьшается (идет вверх)
+                const pointY = currentYBase - seg.y; 
+                
+                // Угол закручивания зависит от высоты точки
+                const twist = (pointY / h) * Math.PI * 4; 
+                const angle = this.angleOffset + twist;
+                
+                // Смещаем сегмент по кругу + добавляем его собственный джиттер (seg.x)
+                const r = currentRadius + seg.x;
+                
+                const x = cx + Math.cos(angle) * r;
+                const y = pointY;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+
+            // Прозрачность: исчезает вверху и внизу
+            let alpha = 1;
+            if (this.yProgress < 0.1) alpha = this.yProgress * 10;
+            if (this.yProgress > 0.8) alpha = 1 - (this.yProgress - 0.8) * 5;
+            
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = alpha * 0.6; // Полупрозрачные
+            ctx.stroke();
+            
+            // "Частицы" отлетающие (точки на концах сегментов)
+            if (Math.random() > 0.95) {
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(cx + Math.cos(this.angleOffset)*currentRadius, currentYBase, 2, 2);
+            }
         }
     }
 
-    function initParticles() {
-        particles = [];
-        for(let i=0; i<100; i++) particles.push(new Particle());
+    function initStrands() {
+        strands = [];
+        for(let i=0; i<25; i++) strands.push(new LightningStrand());
     }
-    initParticles();
+    initStrands();
 
     function animate() {
-        // Очищаем полностью (прозрачный фон)
         ctx.clearRect(0, 0, w, h);
         
-        // Рисуем частицы
-        particles.forEach(p => p.draw());
+        // Рисуем молнии
+        strands.forEach(s => {
+            s.update();
+            s.draw();
+        });
+        
         requestAnimationFrame(animate);
     }
     animate();
 
     window.initWaves = () => {
         resize();
-        initParticles();
+        initStrands(); // Пересоздаем, чтобы цвет обновился
     };
 })();
