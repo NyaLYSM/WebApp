@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
- <meta charset="utf-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
+
   <script>
-   window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com"
+    window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
   </script>
-  
-  <link rel="stylesheet" href="css/style.css?v=20"> 
+
+  <link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body>
 
@@ -18,36 +18,34 @@
   <div class="container">
     <div class="top-row">
       <h1 class="title">Пространство ✨</h1>
-      <button id="palette-btn" aria-label="Палитра">🎨</button>
+      <button id="palette-btn">🎨</button>
     </div>
 
     <nav class="menu" id="nav-menu">
       <div class="menu-indicator" id="menu-wave"></div>
-      
+
       <button class="btn-nav" data-section="populate">Добавить</button>
       <button class="btn-nav" data-section="wardrobe">Гардероб</button>
       <button class="btn-nav" data-section="looks">Образы</button>
       <button class="btn-nav" data-section="profile">Профиль</button>
     </nav>
 
-    <main id="content" class="card" style="background: transparent; box-shadow: none; padding: 0;"></main>
+    <main id="content" class="card" style="background:transparent; box-shadow:none; padding:0;"></main>
   </div>
 
-<div id="palette-overlay" class="palette-overlay" hidden>
-    <div class="palette-modal"> 
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">Стиль</h3>
-            <button id="palette-close" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
-        </div>
-        
-        <div class="palette-grid" id="palette-grid"></div>
-
-        <div class="texture-switch">
-            <button class="texture-btn active" data-mode="matte">Матовый</button>
-            <button class="texture-btn" data-mode="glossy">Карамель</button>
-        </div>
-
-        <button id="palette-auto" class="btn" style="margin-top:15px; margin-bottom:0; background:rgba(255,255,255,0.05);">Авто (Цвет)</button>
+  <div id="palette-overlay" class="palette-overlay" hidden>
+    <div class="palette-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Стиль</h3>
+        <button id="palette-close" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+      </div>
+      <div class="palette-grid" id="palette-grid"></div>
+      <button id="palette-auto" class="btn">Авто</button>
     </div>
   </div>
 
+  <script src="js/vortex.js?v=21"></script>
+  <script src="js/api.js?v=21"></script>
+  <script src="js/app.js?v=21"></script>
+</body>
+</html>
