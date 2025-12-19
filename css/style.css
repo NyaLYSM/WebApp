@@ -121,13 +121,15 @@ body.glossy-mode .btn:active {
 /* Индикатор-слайдер */
 .menu-indicator {
   position: absolute;
-  background: var(--card-bg); /* Теперь он цвета карточки, а не белый */
-  border-radius: 14px;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  top: 0;
+  left: 0;
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1);
+  pointer-events: none;
   z-index: 0;
-  border: 1px solid rgba(255,255,255,0.1);
 }
+
 /* В Glossy режиме индикатор тоже блестит */
 body.glossy-mode .menu-indicator {
   background: rgba(255,255,255,0.1);
@@ -252,3 +254,4 @@ body.glossy-mode .menu-indicator {
 }
 
 .loader { padding: 40px; text-align: center; color: var(--muted); }
+
