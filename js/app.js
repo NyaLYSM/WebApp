@@ -117,11 +117,18 @@
       };
     });
 
-    document.querySelectorAll('.texture-btn').forEach(btn => {
-      btn.onclick = () => toggleButtonStyle(btn.dataset.mode);
+    // ВИД КНОПОК
+    document.querySelectorAll('.style-btn').forEach(btn => {
+      btn.onclick = () => {
+        const style = btn.dataset.style;
+        toggleButtonStyle(style);
+        document.querySelectorAll('.style-btn')
+          .forEach(b => b.classList.toggle('active', b.dataset.style === style));
+      };
     });
 
     toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
+
 
     
     // Кнопки текстур
@@ -374,6 +381,7 @@
 
   startApp();
 })();
+
 
 
 
