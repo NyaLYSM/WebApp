@@ -1,11 +1,11 @@
-// js/vortex.js — VORTEX STRANDS EDITION
+// js/vortex.js — POLYGON VORTEX EDITION
 (function () {
   const canvas = document.getElementById("bgCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
   let w, h;
-  let strands = [];
+  let shapes = [];
 
   function resize() {
     w = canvas.width = window.innerWidth;
@@ -14,83 +14,84 @@
   window.addEventListener("resize", resize);
   resize();
 
-  class Strand {
+  class VortexShape {
     constructor() {
       this.reset();
-      this.yProgress = Math.random();
+      this.progress = Math.random();
     }
 
     reset() {
-      this.yProgress = 0;
+      this.progress = 0;
       this.speed = 0.001 + Math.random() * 0.002;
       this.angle = Math.random() * Math.PI * 2;
-      this.radiusBase = w * (0.3 + Math.random() * 0.2);
+      this.radiusBase = w * (0.25 + Math.random() * 0.25);
+      this.sides = 4 + Math.floor(Math.random() * 4); // 4–7 углов
+      this.size = 12 + Math.random() * 20;
 
       const style = getComputedStyle(document.documentElement);
       this.color = style.getPropertyValue("--accent").trim() || "#6c5ce7";
-
-      this.segments = [];
-      for (let i = 0; i < 14; i++) {
-        this.segments.push({
-          offset: (Math.random() - 0.5) * 25,
-          y: i * 18
-        });
-      }
     }
 
     update() {
-      this.yProgress += this.speed;
-      this.angle += 0.015;
-      if (this.yProgress > 1.15) this.reset();
+      this.progress += this.speed;
+      this.angle += 0.02;
+      if (this.progress > 1.2) this.reset();
     }
 
     draw() {
-      const baseY = h - this.yProgress * h;
-      const radius = this.radiusBase * (1 - this.yProgress * 0.6);
+      const y = h - this.progress * h;
+      const radius = this.radiusBase * (1 - this.progress * 0.65);
       const cx = w / 2;
 
+      const x = cx + Math.cos(this.angle) * radius;
+
+      const fade =
+        this.progress < 0.1
+          ? this.progress * 10
+          : this.progress > 0.85
+          ? 1 - (this.progress - 0.85) * 6
+          : 1;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(this.angle + this.progress * 4);
+      ctx.globalAlpha = fade * 0.5;
+      ctx.fillStyle = this.color;
+
       ctx.beginPath();
+      for (let i = 0; i < this.sides; i++) {
+        const a = (Math.PI * 2 / this.sides) * i;
+        const r = this.size * (0.6 + Math.random() * 0.4);
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
 
-      this.segments.forEach((seg, i) => {
-        const py = baseY - seg.y;
-        const twist = (py / h) * Math.PI * 4;
-        const a = this.angle + twist;
-        const r = radius + seg.offset;
+      // мелкие обломки
+      if (Math.random() > 0.97) {
+        ctx.fillRect(
+          (Math.random() - 0.5) * 6,
+          (Math.random() - 0.5) * 6,
+          2,
+          2
+        );
+      }
 
-        const x = cx + Math.cos(a) * r;
-        const y = py;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-
-        // отрыв частиц
-        if (Math.random() > 0.985) {
-          ctx.fillStyle = this.color;
-          ctx.globalAlpha = 0.6;
-          ctx.fillRect(x, y, 2, 2);
-        }
-      });
-
-      let alpha = 1;
-      if (this.yProgress < 0.1) alpha = this.yProgress * 10;
-      if (this.yProgress > 0.8) alpha = 1 - (this.yProgress - 0.8) * 5;
-
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = alpha * 0.5;
-      ctx.stroke();
+      ctx.restore();
     }
   }
 
   function init() {
-    strands = [];
-    for (let i = 0; i < 26; i++) strands.push(new Strand());
+    shapes = [];
+    for (let i = 0; i < 40; i++) shapes.push(new VortexShape());
   }
   init();
 
   function animate() {
     ctx.clearRect(0, 0, w, h);
-    strands.forEach(s => {
+    shapes.forEach(s => {
       s.update();
       s.draw();
     });
