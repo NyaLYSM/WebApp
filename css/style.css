@@ -270,3 +270,37 @@ body.glossy-mode .menu-indicator {
 .palette-modal {
   animation: fadeUp 0.35s cubic-bezier(0.25,0.8,0.25,1);
 }
+
+.texture-switch {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.texture-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.texture-btn.active {
+  color: #fff;
+  border-color: var(--accent);
+}
+
+body.caramel-buttons .btn {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 70%, #fff),
+    var(--accent-dark)
+  );
+  box-shadow:
+    inset 0 2px 3px rgba(255,255,255,0.4),
+    0 6px 0 var(--accent-dark),
+    0 14px 25px rgba(0,0,0,0.4);
+}
