@@ -304,3 +304,26 @@ body.caramel-buttons .btn {
     0 6px 0 var(--accent-dark),
     0 14px 25px rgba(0,0,0,0.4);
 }
+
+.file-input {
+  position: relative;
+}
+
+.file-input .input[readonly] {
+  background: #111;
+  color: #aaa;
+}
+
+.file-reset {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #777;
+  cursor: pointer;
+  display: none;
+}
+
+.file-input.has-file .file-reset {
+  display: block;
+}
