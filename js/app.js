@@ -214,6 +214,25 @@
     updatePopulateForm();
   };
 
+  window.resetFile = () => {
+    const input = document.getElementById('manual-img-url');
+    const file = document.getElementById('manual-file');
+    input.value = '';
+    input.readOnly = false;
+    input.parentElement.classList.remove('has-file');
+    file.value = '';
+  };
+
+  document.addEventListener('change', e => {
+    if (e.target.id === 'manual-file' && e.target.files[0]) {
+      const input = document.getElementById('manual-img-url');
+      input.value = e.target.files[0].name;
+      input.readOnly = true;
+      input.parentElement.classList.add('has-file');
+    }
+  });
+
+  
   function updatePopulateForm() {
     const container = document.getElementById("populate-form");
     
@@ -350,5 +369,6 @@
 
   startApp();
 })();
+
 
 
