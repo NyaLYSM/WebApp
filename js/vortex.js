@@ -1,4 +1,4 @@
-// js/vortex.js — TRUE CINEMATIC TORNADO
+// js/vortex.js — GEOMETRIC STORM (OPTIMIZED)
 (function () {
   const canvas = document.getElementById("bgCanvas");
   if (!canvas) return;
@@ -13,83 +13,79 @@
   resize();
 
   const TWO_PI = Math.PI * 2;
-  let time = 0;
+  const CENTER_X = () => w / 2;
 
-  const RINGS = [];
-  const RING_COUNT = 90;
+  const FORMS = [];
+  const FORM_COUNT = 16;
 
-  class VortexRing {
-    constructor(level) {
-      this.level = level; // 0 (низ) -> 1 (верх)
-      this.angle = Math.random() * TWO_PI;
-      this.speed = 0.002 + (1 - level) * 0.006;
+  function createShapePoints(count) {
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * TWO_PI;
+      const r = 0.7 + Math.random() * 0.4;
+      pts.push({ a, r });
+    }
+    return pts;
+  }
 
-      this.points = 8 + Math.floor(Math.random() * 6);
-      this.noise = Math.random() * 1000;
+  class VortexForm {
+    constructor(index) {
+      this.index = index;
+      this.reset();
+
+      this.points = createShapePoints(12 + Math.floor(Math.random() * 6));
 
       const style = getComputedStyle(document.documentElement);
       this.color =
         style.getPropertyValue("--accent").trim() || "#6c5ce7";
     }
 
+    reset() {
+      this.y = h + Math.random() * h;
+      this.level = Math.random();
+      this.angle = Math.random() * TWO_PI;
+      this.rotationSpeed = 0.001 + Math.random() * 0.002;
+      this.riseSpeed = 0.15 + Math.random() * 0.25;
+    }
+
     update() {
-      this.angle += this.speed;
-      this.noise += 0.01;
+      this.y -= this.riseSpeed;
+      this.angle += this.rotationSpeed;
+
+      if (this.y < -h * 0.3) {
+        this.reset();
+      }
     }
 
     draw() {
-      const cx = w / 2;
-      const baseY = h * (1 - this.level);
+      const t = 1 - this.y / h;
 
-      // радиус увеличивается кверху
-      const maxRadius = Math.min(w, h) * 0.45;
       const radius =
-        maxRadius * (0.1 + this.level * this.level);
+        Math.min(w, h) * (0.12 + t * 0.35);
 
-      const perspective = 0.6 + this.level * 0.8;
+      const squash = 0.4 + t * 0.6;
 
       ctx.save();
-      ctx.translate(cx, baseY);
+      ctx.translate(CENTER_X(), this.y);
       ctx.rotate(this.angle);
 
       ctx.beginPath();
 
-      for (let i = 0; i <= this.points; i++) {
-        const p = i / this.points;
-        const a = p * TWO_PI;
-
-        // неровность, как пыль / мусор
-        const jitter =
-          Math.sin(a * 3 + this.noise) * radius * 0.15;
-
-        const r = radius + jitter;
-
-        // имитация 3D (сплющивание по Y)
-        const x = Math.cos(a) * r;
-        const y = Math.sin(a) * r * perspective;
-
+      this.points.forEach((p, i) => {
+        const r = radius * p.r;
+        const x = Math.cos(p.a) * r;
+        const y = Math.sin(p.a) * r * squash;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
-      }
+      });
 
       ctx.closePath();
 
-      const alpha =
-        this.level < 0.15
-          ? this.level * 6
-          : this.level > 0.85
-          ? (1 - this.level) * 6
-          : 1;
-
       ctx.strokeStyle = this.color;
-      ctx.globalAlpha = alpha * 0.25;
-      ctx.lineWidth = 2 + (1 - this.level) * 3;
-
+      ctx.globalAlpha = 0.12 + t * 0.25;
+      ctx.lineWidth = 2 + (1 - t) * 3;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
-
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 12;
 
       ctx.stroke();
       ctx.restore();
@@ -97,24 +93,18 @@
   }
 
   function init() {
-    RINGS.length = 0;
-    for (let i = 0; i < RING_COUNT; i++) {
-      RINGS.push(new VortexRing(i / RING_COUNT));
+    FORMS.length = 0;
+    for (let i = 0; i < FORM_COUNT; i++) {
+      FORMS.push(new VortexForm(i));
     }
   }
 
   function animate() {
-    time++;
-
     ctx.clearRect(0, 0, w, h);
 
-    // лёгкий туман
-    ctx.fillStyle = "rgba(0,0,0,0.12)";
-    ctx.fillRect(0, 0, w, h);
-
-    RINGS.forEach(r => {
-      r.update();
-      r.draw();
+    FORMS.forEach(f => {
+      f.update();
+      f.draw();
     });
 
     requestAnimationFrame(animate);
