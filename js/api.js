@@ -1,4 +1,4 @@
-// js/api.js
+// js/api.js — FIXED UPLOAD & AUTH
 (function () {
   // Настройка URL бэкенда
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
@@ -11,23 +11,31 @@
   window.clearToken = () => localStorage.removeItem("access_token");
 
   // Формирование заголовков
+  // json = true -> добавляем Content-Type: application/json
+  // json = false -> не добавляем Content-Type (нужно для FormData/Upload)
   function getHeaders(json = true) {
     const h = {};
     const token = window.getToken();
-    // ФИКС: Отправляем Bearer только если токен есть и он не является строкой "null"/"undefined"
+    
+    // Проверяем токен на валидность строки
     if (token && token !== "null" && token !== "undefined") {
       h["Authorization"] = `Bearer ${token}`;
     }
-    if (json) h["Content-Type"] = "application/json";
+    
+    if (json) {
+      h["Content-Type"] = "application/json";
+    }
+    
     return h;
   }
 
-  // Централизованная обработка ошибок
+  // Обработка ошибок
   async function handleApiError(res) {
     if (res.status === 401) {
       console.warn("Сессия истекла (401). Токен очищен.");
       window.clearToken();
-      return; // Не кидаем ошибку, чтобы приложение не падало
+      // Можно добавить редирект или перезагрузку, если нужно
+      return; 
     }
     if (!res.ok) {
       const details = await res.text();
@@ -35,7 +43,7 @@
     }
   }
 
-  // Ожидание прогрева сервера (Render)
+  // Прогрев
   window.waitForBackend = async () => {
     console.log("Проверка связи с сервером...");
     for (let i = 0; i < 5; i++) {
@@ -43,16 +51,17 @@
         const res = await fetch(window.BACKEND_URL + "/health");
         if (res.ok) return true;
       } catch (e) {}
-      await new Promise(r => setTimeout(r, 2000)); // Ждем 2 сек перед повтором
+      await new Promise(r => setTimeout(r, 2000));
     }
     return false;
   };
 
-  // Методы запросов
+  // --- МЕТОДЫ ---
+
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
     const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { 
-      headers: getHeaders(false) 
+      headers: getHeaders(true) // Можно true или false для GET, но обычно JSON ок
     });
     await handleApiError(res);
     return res.ok ? res.json() : [];
@@ -61,7 +70,7 @@
   window.apiPost = async (path, payload = {}) => {
     const res = await fetch(window.BACKEND_URL + path, {
       method: "POST",
-      headers: getHeaders(true),
+      headers: getHeaders(true), // Content-Type: application/json
       body: JSON.stringify(payload)
     });
     await handleApiError(res);
@@ -77,4 +86,20 @@
     await handleApiError(res);
     return res.ok ? res.json() : null;
   };
+
+  // ВОТ ОНА — ПРОПАВШАЯ ФУНКЦИЯ
+  window.apiUpload = async (path, formData) => {
+    // ВАЖНО: getHeaders(false) не добавляет Content-Type,
+    // чтобы браузер сам выставил multipart/form-data boundary
+    const headers = getHeaders(false); 
+
+    const res = await fetch(window.BACKEND_URL + path, {
+      method: "POST",
+      headers: headers, // Тут только Authorization
+      body: formData
+    });
+    await handleApiError(res);
+    return res.ok ? res.json() : null;
+  };
+
 })();
