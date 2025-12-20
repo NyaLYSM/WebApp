@@ -89,6 +89,20 @@
       <div class="p-item" style="background: linear-gradient(135deg, ${p.accent}, ${p.accentDark});" data-idx="${idx}"></div>
     `).join('');
 
+	grid.querySelectorAll('.p-item').forEach(item => {
+  	  item.onclick = () => {
+    	const idx = +item.dataset.idx;
+    	const p = PALETTES[idx];
+    	applyPalette(p);
+    	localStorage.setItem('selectedPalette', p.name);
+
+    	grid.querySelectorAll('.p-item')
+      	  .forEach(i => i.classList.remove('active'));
+    	item.classList.add('active');
+  	  };
+	});
+
+	  
 	document.querySelectorAll('.style-btn').forEach(btn => {
 	  btn.onclick = () => {
 		const style = btn.dataset.style;
@@ -313,18 +327,18 @@
         setTimeout(() => moveWave(startBtn), 100);
     });
 
-    const isUp = await window.waitForBackend();
-    if (isUp && tg && tg.initData) {
-        try {
-           const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
-           if (res && res.access_token) {
-               window.setToken(res.access_token);
-               renderWardrobe(); 
-           }
-        } catch(e) {}
+    if (tg && tg.initData) {
+  try {
+    const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+    if (res && res.access_token) {
+      window.setToken(res.access_token);
+      renderWardrobe(); 
     }
-  }
+  } catch(e) {}
+}
+
 
   startApp();
 })();
+
 
