@@ -184,14 +184,6 @@ body {
 }
 .p-item.active { border-color: #fff; transform: scale(1.05); }
 
-.texture-switch {
-    display: flex; background: #000; padding: 4px; border-radius: 12px; margin-top: 15px;
-}
-.texture-btn {
-    flex: 1; padding: 10px; color: var(--muted); background: transparent; border: none; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 600;
-}
-.texture-btn.active { background: #333; color: #fff; }
-
 .gallery-btn {
   width: 52px; height: 52px;
   background: linear-gradient(135deg, #2d3436, #000);
@@ -217,28 +209,6 @@ body {
 .card,
 .palette-modal {
   animation: fadeUp 0.35s cubic-bezier(0.25,0.8,0.25,1);
-}
-
-.texture-switch {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.texture-btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
-  color: var(--muted);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.texture-btn.active {
-  color: #fff;
-  border-color: var(--accent);
 }
 
 body.caramel-buttons .btn::after {
@@ -299,4 +269,5 @@ body.caramel-buttons .btn::after {
   color: #fff;
   border-color: var(--accent);
 }
+
 
