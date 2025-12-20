@@ -205,64 +205,45 @@
     btns[1].classList.toggle('active', tab === 'manual');
     updatePopulateForm();
   };
-
-  function updatePopulateForm() {
-    const container = document.getElementById("populate-form");
     
     function updatePopulateForm() {
-  const container = document.getElementById("populate-form");
-  
-  if (currentTab === 'marketplace') {
-    container.innerHTML = `
-      <div class="input-wrapper">
-        <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
-      </div>
-      <div class="input-wrapper">
-        <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
-      </div>
-      <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
-    `;
-  } else {
-    container.innerHTML = `
-      <div class="input-wrapper">
-        <input type="text" id="manual-name" class="input" placeholder="Название вещи">
-      </div>
+  	  const container = document.getElementById("populate-form");
 
-      <div class="input-wrapper file-input">
-        <input
-          type="text"
-          id="manual-img-url"
-          class="input"
-          placeholder="Ссылка на картинку (если есть)"
-        >
+  		if (currentTab === 'marketplace') {
+    	  container.innerHTML =
+      		'<div class="input-wrapper">' +
+        	  '<input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">' +
+      		'</div>' +
+      		'<div class="input-wrapper">' +
+        		'<input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">' +
+      		'</div>' +
+      		'<button class="btn" onclick="window.handleAddMarket()">Добавить</button>';
+  		} else {
+   		 container.innerHTML =
+     	   '<div class="input-wrapper">' +
+        	  '<input type="text" id="manual-name" class="input" placeholder="Название вещи">' +
+     	   '</div>' +
 
-        <button
-          type="button"
-          class="file-reset"
-          onclick="window.resetManualFile()"
-          aria-label="Очистить"
-        >
-          ✕
-        </button>
+      	  '<div class="input-wrapper file-input">' +
+        	'<input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку (если есть)">' +
+        	'<span class="file-reset" onclick="window.resetManualFile()">✕</span>' +
+        	'<label class="gallery-btn">🖼️' +
+         	   '<input type="file" id="manual-file" hidden accept="image/*">' +
+        	'</label>' +
+     	   '</div>' +
 
-        <label class="gallery-btn">
-          🖼️
-          <input
-            type="file"
-            id="manual-file"
-            hidden
-            accept="image/*"
-            onchange="window.handleManualFile(this)"
-          >
-        </label>
-      </div>
+      	   '<button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>';
 
-      <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">
-        Загрузить
-      </button>
-    `;
-  }
-}
+    	// навешиваем обработчик БЕЗ inline JS
+    	const fileInput = container.querySelector('#manual-file');
+   	    if (fileInput) {
+     	  fileInput.onchange = function () {
+        	window.handleManualFile(this);
+      	  };
+    	}
+  	  }
+	}
+
 
 
   // --- ПРОФИЛЬ ---
@@ -366,6 +347,7 @@
 
 startApp();
 })();
+
 
 
 
