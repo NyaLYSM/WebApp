@@ -61,51 +61,6 @@ body {
   overflow: hidden; /* Важно для бликов */
 }
 
-/* 1. MATTE MODE (Стандартный 3D) */
-body:not(.glossy-mode) .btn {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-  box-shadow: 
-    inset 0 1px 0 rgba(255,255,255,0.2), 
-    0 6px 0 var(--accent-dark),          
-    0 10px 20px rgba(0,0,0,0.4);
-}
-body:not(.glossy-mode) .btn:active {
-  transform: translateY(6px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 var(--accent-dark);
-}
-
-/* 2. GLOSSY / CARAMEL MODE (Карамель) */
-body.glossy-mode .btn {
-  /* Сложный градиент для объема */
-  background: radial-gradient(100% 100% at 50% 0%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%),
-              linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
-  
-  /* Внутреннее свечение и глубокая тень */
-  box-shadow: 
-    inset 0 2px 1px rgba(255,255,255,0.7), /* Блик сверху */
-    inset 0 -2px 5px rgba(0,0,0,0.2),      /* Тень внутри снизу */
-    0 8px 20px rgba(0, 0, 0, 0.3),         /* Тень внешняя мягкая */
-    0 4px 0 rgba(0,0,0,0.2);               /* Тень жесткая (небольшая) */
-    
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Блик "Линза" для карамели */
-body.glossy-mode .btn::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 45%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
-  border-radius: 12px 12px 40% 40% / 12px 12px 20% 20%; /* Форма линзы */
-  pointer-events: none;
-}
-
-body.glossy-mode .btn:active {
-  transform: scale(0.97); /* В карамели нажимается мягко "внутрь" */
-  box-shadow: inset 0 3px 10px rgba(0,0,0,0.3);
-}
-
-
 /* --- NAVIGATION MENU (FIXED) --- */
 .menu { 
   position: relative;
@@ -128,13 +83,6 @@ body.glossy-mode .btn:active {
   transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1);
   pointer-events: none;
   z-index: 0;
-}
-
-/* В Glossy режиме индикатор тоже блестит */
-body.glossy-mode .menu-indicator {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .menu .btn-nav {
@@ -293,17 +241,19 @@ body.glossy-mode .menu-indicator {
   border-color: var(--accent);
 }
 
-body.caramel-buttons .btn {
+body.caramel-buttons .btn::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 12px;
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent) 70%, #fff),
-    var(--accent-dark)
+    180deg,
+    rgba(255,255,255,0.35),
+    transparent 60%
   );
-  box-shadow:
-    inset 0 2px 3px rgba(255,255,255,0.4),
-    0 6px 0 var(--accent-dark),
-    0 14px 25px rgba(0,0,0,0.4);
+  pointer-events: none;
 }
+
 
 .file-input {
   position: relative;
@@ -349,3 +299,4 @@ body.caramel-buttons .btn {
   color: #fff;
   border-color: var(--accent);
 }
+
