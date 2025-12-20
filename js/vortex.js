@@ -1,11 +1,11 @@
-// js/vortex.js — HURRICANE RIBBON VORTEX
+// js/vortex.js — CINEMATIC AIR VORTEX
 (function () {
   const canvas = document.getElementById("bgCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
   let w, h;
-  let ribbons = [];
+  let streams = [];
 
   function resize() {
     w = canvas.width = window.innerWidth;
@@ -14,85 +14,101 @@
   window.addEventListener("resize", resize);
   resize();
 
-  class VortexRibbon {
+  const TAU = Math.PI * 2;
+
+  class AirStream {
     constructor() {
       this.reset();
-      this.progress = Math.random();
+      this.offset = Math.random() * 1000;
     }
 
     reset() {
-      this.progress = 0;
-      this.speed = 0.0008 + Math.random() * 0.0015;
-      this.angle = Math.random() * Math.PI * 2;
-      this.radiusBase = w * (0.3 + Math.random() * 0.25);
-      this.length = 10 + Math.floor(Math.random() * 8);
-      this.width = 6 + Math.random() * 10;
+      this.progress = Math.random();
+      this.speed = 0.0006 + Math.random() * 0.0008;
+      this.baseAngle = Math.random() * TAU;
+      this.radius = w * (0.15 + Math.random() * 0.35);
+      this.length = 120 + Math.random() * 220; // ДЛИНА потока
+      this.width = 10 + Math.random() * 18;    // ТОЛЩИНА
 
       const style = getComputedStyle(document.documentElement);
-      this.color = style.getPropertyValue("--accent").trim() || "#6c5ce7";
+      this.color =
+        style.getPropertyValue("--accent").trim() || "#6c5ce7";
     }
 
     update() {
       this.progress += this.speed;
-      this.angle += 0.01 + this.progress * 0.02;
-      if (this.progress > 1.2) this.reset();
+      if (this.progress > 1.15) this.reset();
     }
 
     draw() {
-      const cx = w / 2;
-      const baseY = h - this.progress * h;
-      const baseRadius = this.radiusBase * (1 - this.progress * 0.7);
+      const y = h - this.progress * h;
+      const centerX = w / 2;
 
-      let points = [];
+      const swirl =
+        this.baseAngle +
+        this.progress * 6 +
+        Math.sin(this.progress * 4 + this.offset) * 0.6;
 
-      for (let i = 0; i < this.length; i++) {
-        const t = i / this.length;
-        const twist = this.angle + t * 2.5;
-        const r = baseRadius - t * 40;
-        const x = cx + Math.cos(twist) * r;
-        const y = baseY - t * 60;
-
-        points.push({ x, y, w: this.width * (1 - t) });
-      }
+      const r = this.radius * (1 - this.progress * 0.7);
+      const x = centerX + Math.cos(swirl) * r;
 
       const fade =
         this.progress < 0.15
-          ? this.progress * 6
+          ? this.progress / 0.15
           : this.progress > 0.85
-          ? 1 - (this.progress - 0.85) * 6
+          ? (1 - this.progress) / 0.15
           : 1;
 
-      ctx.globalAlpha = fade * 0.45;
-      ctx.fillStyle = this.color;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(swirl + Math.PI / 2);
+      ctx.globalAlpha = fade * 0.25;
+
+      const grad = ctx.createLinearGradient(
+        0,
+        -this.length / 2,
+        0,
+        this.length / 2
+      );
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.5, this.color);
+      grad.addColorStop(1, "transparent");
+
+      ctx.fillStyle = grad;
 
       ctx.beginPath();
-      points.forEach((p, i) => {
-        const nx = Math.cos(this.angle + i) * p.w;
-        const ny = Math.sin(this.angle + i) * p.w;
-        i === 0 ? ctx.moveTo(p.x + nx, p.y + ny) : ctx.lineTo(p.x + nx, p.y + ny);
-      });
-      for (let i = points.length - 1; i >= 0; i--) {
-        const p = points[i];
-        const nx = Math.cos(this.angle + i + Math.PI) * p.w;
-        const ny = Math.sin(this.angle + i + Math.PI) * p.w;
-        ctx.lineTo(p.x + nx, p.y + ny);
-      }
+      ctx.moveTo(-this.width, -this.length / 2);
+      ctx.quadraticCurveTo(
+        0,
+        0,
+        -this.width,
+        this.length / 2
+      );
+      ctx.lineTo(this.width, this.length / 2);
+      ctx.quadraticCurveTo(
+        0,
+        0,
+        this.width,
+        -this.length / 2
+      );
       ctx.closePath();
       ctx.fill();
+
+      ctx.restore();
     }
   }
 
   function init() {
-    ribbons = [];
-    for (let i = 0; i < 22; i++) ribbons.push(new VortexRibbon());
+    streams = [];
+    for (let i = 0; i < 60; i++) streams.push(new AirStream());
   }
   init();
 
   function animate() {
     ctx.clearRect(0, 0, w, h);
-    ribbons.forEach(r => {
-      r.update();
-      r.draw();
+    streams.forEach(s => {
+      s.update();
+      s.draw();
     });
     requestAnimationFrame(animate);
   }
