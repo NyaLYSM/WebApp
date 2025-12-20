@@ -1,4 +1,4 @@
-// js/app.js - CARAMEL VORTEX EDITION
+// js/app.js - FIXED UPLOAD ROUTE & CACHE BUSTING
 
 (function() {
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -18,23 +18,15 @@
   let currentTab = 'marketplace'; 
 
   // =================================================================================
-  // 1. WAVE ANIMATION (FIXED ALIGNMENT)
+  // 1. WAVE ANIMATION
   // =================================================================================
   function moveWave(targetBtn) {
       if(!targetBtn) return;
-      
       const parent = document.getElementById('nav-menu');
       const parentRect = parent.getBoundingClientRect();
       const btnRect = targetBtn.getBoundingClientRect();
-      
-      // Вычисляем позицию относительно родителя
       const relX = btnRect.left - parentRect.left;
       const relY = btnRect.top - parentRect.top;
-      
-      // Учитываем паддинг родителя (6px), чтобы плашка не вылезала
-      // Но так как мы используем относительные координаты от края до края кнопки, 
-      // просто ставим размеры кнопки.
-      
       wave.style.width = btnRect.width + 'px';
       wave.style.height = btnRect.height + 'px';
       wave.style.transform = `translate(${relX}px, ${relY}px)`;
@@ -62,10 +54,7 @@
   }
 
   function toggleButtonStyle(style) {
-    document.body.classList.toggle(
-      'caramel-buttons',
-      style === 'caramel'
-    );
+    document.body.classList.toggle('caramel-buttons', style === 'caramel');
     localStorage.setItem('buttonStyle', style);
   }
 
@@ -76,8 +65,6 @@
     const closeBtn = document.getElementById("palette-close");
     const autoBtn = document.getElementById("palette-auto");
 
-
-    // 1. Цвета
     const saved = localStorage.getItem('selectedPalette');
     const startP = saved ? PALETTES.find(x => x.name === saved) : PALETTES[0];
     applyPalette(startP || PALETTES[0]);
@@ -90,36 +77,26 @@
       <div class="p-item" style="background: linear-gradient(135deg, ${p.accent}, ${p.accentDark});" data-idx="${idx}"></div>
     `).join('');
 
-	grid.querySelectorAll('.p-item').forEach(item => {
-  	  item.onclick = () => {
-    	const idx = +item.dataset.idx;
-    	const p = PALETTES[idx];
-    	applyPalette(p);
-    	localStorage.setItem('selectedPalette', p.name);
+    grid.querySelectorAll('.p-item').forEach(item => {
+      item.onclick = () => {
+        const idx = +item.dataset.idx;
+        const p = PALETTES[idx];
+        applyPalette(p);
+        localStorage.setItem('selectedPalette', p.name);
+        grid.querySelectorAll('.p-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      };
+    });
 
-    	grid.querySelectorAll('.p-item')
-      	  .forEach(i => i.classList.remove('active'));
-    	item.classList.add('active');
-  	  };
-	});
+    document.querySelectorAll('.style-btn').forEach(btn => {
+      btn.onclick = () => {
+        const style = btn.dataset.style;
+        toggleButtonStyle(style);
+        document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
+      };
+    });
 
-	  
-	document.querySelectorAll('.style-btn').forEach(btn => {
-	  btn.onclick = () => {
-		const style = btn.dataset.style;
-		toggleButtonStyle(style);
-		document
-		  .querySelectorAll('.style-btn')
-		  .forEach(b =>
-			b.classList.toggle(
-			  'active',
-			  b.dataset.style === style
-			)
-		  );
-	  };
-	});
-
-	toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
+    toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
     
     if(autoBtn) {
         autoBtn.onclick = () => {
@@ -184,7 +161,7 @@
     }
   }
 
-  // --- ДОБАВЛЕНИЕ (ПОЛЯ ПЕРЕМЕЩЕНЫ) ---
+  // --- ДОБАВЛЕНИЕ ---
   function renderPopulate() {
     content.innerHTML = `
       <div class="card">
@@ -206,64 +183,40 @@
     updatePopulateForm();
   };
     
-    function updatePopulateForm() {
-  	  const container = document.getElementById("populate-form");
-
-  		if (currentTab === 'marketplace') {
-    	  container.innerHTML =
-      		'<div class="input-wrapper">' +
-        	  '<input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">' +
-      		'</div>' +
-      		'<div class="input-wrapper">' +
-        		'<input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">' +
-      		'</div>' +
-      		'<button class="btn" onclick="window.handleAddMarket()">Добавить</button>';
-  		} else {
-   		 container.innerHTML =
-     	   '<div class="input-wrapper">' +
-        	  '<input type="text" id="manual-name" class="input" placeholder="Название вещи">' +
-     	   '</div>' +
-
-      	  '<div class="input-wrapper file-input">' +
-        	'<input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">' +
-        	'<span class="file-reset" onclick="window.resetManualFile()">✕</span>' +
-        	'<label class="gallery-btn">🖼️' +
-         	   '<input type="file" id="manual-file" hidden accept="image/*">' +
-        	'</label>' +
-     	   '</div>' +
-
-      	   '<button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>';
-
-    	// навешиваем обработчик БЕЗ inline JS
-    	const fileInput = container.querySelector('#manual-file');
-   	    if (fileInput) {
-     	  fileInput.onchange = function () {
-        	window.handleManualFile(this);
-      	  };
-    	}
-  	  }
-	}
-
-
-
-  // --- ПРОФИЛЬ ---
-  function renderProfile() {
-    const user = tg?.initDataUnsafe?.user || {};
-    content.innerHTML = `
-      <div class="card profile-card">
-        <div class="profile-name">${user.first_name || "Guest"}</div>
-        <div class="profile-id">ID: ${user.id || "Unknown"}</div>
-        <div class="stats-row">
-           <div class="stat-box">PRO</div>
-           <div class="stat-box">V. 2.2</div>
-        </div>
-      </div>
-    `;
+  function updatePopulateForm() {
+      const container = document.getElementById("populate-form");
+      if (currentTab === 'marketplace') {
+        container.innerHTML = `
+          <div class="input-wrapper">
+             <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
+          </div>
+          <div class="input-wrapper">
+             <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
+          </div>
+          <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
+        `;
+      } else {
+         container.innerHTML = `
+           <div class="input-wrapper">
+              <input type="text" id="manual-name" class="input" placeholder="Название вещи">
+           </div>
+           <div class="input-wrapper file-input">
+              <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
+              <span class="file-reset" onclick="window.resetManualFile()">✕</span>
+              <label class="gallery-btn">🖼️
+                 <input type="file" id="manual-file" hidden accept="image/*">
+              </label>
+           </div>
+           <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>
+         `;
+         const fileInput = container.querySelector('#manual-file');
+         if (fileInput) {
+            fileInput.onchange = function () { window.handleManualFile(this); };
+         }
+      }
   }
 
-  // =================================================================================
-  // 4. ACTIONS
-  // =================================================================================
+  // --- ACTIONS ---
   function setBtnLoading(btn, isLoading) {
       if(!btn) return;
       if(isLoading) {
@@ -282,21 +235,13 @@
       renderWardrobe();
   };
 
-
   window.handleManualFile = (input) => {
     const file = input.files && input.files[0];
     if (!file) return;
-
     const textInput = document.getElementById('manual-img-url');
     const wrapper = textInput.closest('.file-input');
-
-    // показываем имя файла
     textInput.value = file.name;
-
-    // делаем поле нередактируемым
     textInput.readOnly = true;
-
-    // показываем крестик
     wrapper.classList.add('has-file');
   };
 
@@ -304,19 +249,12 @@
     const fileInput = document.getElementById('manual-file');
     const textInput = document.getElementById('manual-img-url');
     const wrapper = textInput.closest('.file-input');
-
-    // сбрасываем файл
     fileInput.value = '';
-
-    // очищаем поле
     textInput.value = '';
     textInput.readOnly = false;
-
-    // прячем крестик
     wrapper.classList.remove('has-file');
   };
 
-	
   window.handleAddMarket = async () => {
     const url = document.getElementById("market-url").value;
     const name = document.getElementById("market-name").value;
@@ -347,45 +285,55 @@
       } else {
           formData.append("image_url", urlInp);
       }
-      await window.apiUpload('/api/wardrobe/upload', formData);
+      
+      // ИСПРАВЛЕНИЕ: МЕНЯЕМ АДРЕС С /upload НА /add
+      await window.apiUpload('/api/wardrobe/add', formData);
+      
       loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
-    } catch (e) { alert(e.message); setBtnLoading(btn, false); }
+    } catch (e) { 
+        // Если снова 404, значит сервер вообще не принимает файлы на этом пути
+        alert("Ошибка сервера: " + e.message); 
+        setBtnLoading(btn, false); 
+    }
   };
 
-  // START
+  // --- START ---
+  function renderProfile() {
+    const user = tg?.initDataUnsafe?.user || {};
+    content.innerHTML = `
+      <div class="card profile-card">
+        <div class="profile-name">${user.first_name || "Guest"}</div>
+        <div class="profile-id">ID: ${user.id || "Unknown"}</div>
+        <div class="stats-row">
+           <div class="stat-box">PRO</div>
+           <div class="stat-box">V. 2.3</div>
+        </div>
+      </div>
+    `;
+  }
+
   async function startApp() {
     setupPalette();
-    
     navButtons.forEach(btn => {
       btn.onclick = () => loadSection(btn.dataset.section, btn);
     });
 
-    // Инит меню
     const startBtn = document.querySelector('[data-section=wardrobe]');
-    // Важно: ждем пока отрендерится
     requestAnimationFrame(() => {
         loadSection('wardrobe', startBtn);
-        // Еще раз форсим через 100мс для надежности
         setTimeout(() => moveWave(startBtn), 100);
     });
 
-  if (tg && tg.initData) {
-    try {
-      const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
-      if (res && res.access_token) {
-        window.setToken(res.access_token);
-        renderWardrobe(); 
-      }
-    } catch(e) {}
+    if (tg && tg.initData) {
+      try {
+        const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+        if (res && res.access_token) {
+          window.setToken(res.access_token);
+          renderWardrobe(); 
+        }
+      } catch(e) {}
+    }
   }
-}
 
-startApp();
+  startApp();
 })();
-
-
-
-
-
-
-
