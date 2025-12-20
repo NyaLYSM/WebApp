@@ -44,8 +44,8 @@
       this.y = h + Math.random() * h;
       this.level = Math.random();
       this.angle = Math.random() * TWO_PI;
-      this.rotationSpeed = 0.002 + Math.random() * 0.004;
-      this.riseSpeed = 0.3 + Math.random() * 0.5;
+      this.rotationSpeed = 0.002 + Math.random() * 0.016;
+      this.riseSpeed = 0.3 + Math.random() * 1;
     }
 
     update() {
@@ -118,4 +118,5 @@
     init();
   };
 })();
+
 
