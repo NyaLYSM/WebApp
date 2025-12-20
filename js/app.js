@@ -225,7 +225,7 @@
      	   '</div>' +
 
       	  '<div class="input-wrapper file-input">' +
-        	'<input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку (если есть)">' +
+        	'<input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">' +
         	'<span class="file-reset" onclick="window.resetManualFile()">✕</span>' +
         	'<label class="gallery-btn">🖼️' +
          	   '<input type="file" id="manual-file" hidden accept="image/*">' +
@@ -347,6 +347,7 @@
 
 startApp();
 })();
+
 
 
 
