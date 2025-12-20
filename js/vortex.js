@@ -1,4 +1,4 @@
-// js/vortex.js — CINEMATIC AIR VORTEX
+// js/vortex.js — CINEMATIC HURRICANE VORTEX
 (function () {
   const canvas = document.getElementById("bgCanvas");
   if (!canvas) return;
@@ -14,21 +14,25 @@
   window.addEventListener("resize", resize);
   resize();
 
-  const TAU = Math.PI * 2;
+  const TWO_PI = Math.PI * 2;
 
   class AirStream {
     constructor() {
-      this.reset();
-      this.offset = Math.random() * 1000;
+      this.reset(true);
     }
 
-    reset() {
-      this.progress = Math.random();
-      this.speed = 0.0006 + Math.random() * 0.0008;
-      this.baseAngle = Math.random() * TAU;
-      this.radius = w * (0.15 + Math.random() * 0.35);
-      this.length = 120 + Math.random() * 220; // ДЛИНА потока
-      this.width = 10 + Math.random() * 18;    // ТОЛЩИНА
+    reset(initial = false) {
+      this.progress = initial ? Math.random() : 0;
+      this.speed = 0.0006 + Math.random() * 0.001;
+      this.baseAngle = Math.random() * TWO_PI;
+
+      this.radiusBase =
+        Math.min(w, h) * (0.15 + Math.random() * 0.35);
+
+      this.length = 120 + Math.random() * 180;
+      this.width = 6 + Math.random() * 10;
+
+      this.noiseOffset = Math.random() * 1000;
 
       const style = getComputedStyle(document.documentElement);
       this.color =
@@ -37,72 +41,86 @@
 
     update() {
       this.progress += this.speed;
-      if (this.progress > 1.15) this.reset();
+      this.noiseOffset += 0.01;
+
+      if (this.progress > 1.15) {
+        this.reset();
+      }
     }
 
     draw() {
-      const y = h - this.progress * h;
-      const centerX = w / 2;
+      const t = this.progress;
 
-      const swirl =
-        this.baseAngle +
-        this.progress * 6 +
-        Math.sin(this.progress * 4 + this.offset) * 0.6;
+      // вертикальное движение снизу вверх
+      const yBase = h - t * h;
 
-      const r = this.radius * (1 - this.progress * 0.7);
-      const x = centerX + Math.cos(swirl) * r;
+      // мягкое дыхание радиуса
+      const pulse =
+        Math.sin(t * Math.PI * 2 + this.noiseOffset) * 0.08;
 
-      const fade =
-        this.progress < 0.15
-          ? this.progress / 0.15
-          : this.progress > 0.85
-          ? (1 - this.progress) / 0.15
-          : 1;
+      const radius =
+        this.radiusBase * (1 - t * 0.7 + pulse);
+
+      // закручивание
+      const angle =
+        this.baseAngle + t * 6 + Math.sin(t * 4) * 0.3;
+
+      const cx = w / 2;
+      const xBase = cx + Math.cos(angle) * radius;
+
+      // затухание
+      let alpha = 1;
+      if (t < 0.1) alpha = t * 10;
+      else if (t > 0.9) alpha = 1 - (t - 0.9) * 10;
 
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(swirl + Math.PI / 2);
-      ctx.globalAlpha = fade * 0.25;
-
-      const grad = ctx.createLinearGradient(
-        0,
-        -this.length / 2,
-        0,
-        this.length / 2
-      );
-      grad.addColorStop(0, "transparent");
-      grad.addColorStop(0.5, this.color);
-      grad.addColorStop(1, "transparent");
-
-      ctx.fillStyle = grad;
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = this.width;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
 
       ctx.beginPath();
-      ctx.moveTo(-this.width, -this.length / 2);
-      ctx.quadraticCurveTo(
-        0,
-        0,
-        -this.width,
-        this.length / 2
-      );
-      ctx.lineTo(this.width, this.length / 2);
-      ctx.quadraticCurveTo(
-        0,
-        0,
-        this.width,
-        -this.length / 2
-      );
-      ctx.closePath();
-      ctx.fill();
 
+      const segments = 12;
+      for (let i = 0; i <= segments; i++) {
+        const p = i / segments;
+
+        const sway =
+          Math.sin(
+            p * 4 + this.noiseOffset + t * 3
+          ) * radius * 0.12;
+
+        const localAngle =
+          angle + p * 1.2 + sway * 0.002;
+
+        const r =
+          radius - p * this.length * 0.35;
+
+        const x =
+          cx + Math.cos(localAngle) * r;
+
+        const y =
+          yBase - p * this.length;
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      ctx.stroke();
       ctx.restore();
     }
   }
 
   function init() {
     streams = [];
-    for (let i = 0; i < 60; i++) streams.push(new AirStream());
+    const count = Math.floor(
+      Math.min(w, h) / 18
+    );
+    for (let i = 0; i < count; i++) {
+      streams.push(new AirStream());
+    }
   }
-  init();
 
   function animate() {
     ctx.clearRect(0, 0, w, h);
@@ -112,6 +130,8 @@
     });
     requestAnimationFrame(animate);
   }
+
+  init();
   animate();
 
   window.initWaves = () => {
