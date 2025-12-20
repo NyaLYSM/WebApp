@@ -61,35 +61,20 @@
     if (window.initWaves) window.initWaves();
   }
 
-  function toggleButtonStyle(mode) {
-    document.body.classList.toggle('caramel-buttons', mode === 'caramel');
-    localStorage.setItem('buttonStyle', mode);
-    document.querySelectorAll('.texture-btn')
-      .forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  }
-  
-  function toggleTexture(mode) {
-      // mode: 'matte' | 'glossy'
-      if (mode === 'glossy') {
-          document.body.classList.add('glossy-mode');
-      } else {
-          document.body.classList.remove('glossy-mode');
-      }
-      localStorage.setItem('textureMode', mode);
-      
-      // Обновляем кнопки в модалке
-      document.querySelectorAll('.texture-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.mode === mode);
-      });
-  }
-
   function setupPalette() {
     const paletteBtn = document.getElementById("palette-btn");
     const overlay = document.getElementById("palette-overlay");
     const grid = document.getElementById("palette-grid");
     const closeBtn = document.getElementById("palette-close");
     const autoBtn = document.getElementById("palette-auto");
-    const textureBtns = document.querySelectorAll('.texture-btn');
+
+  function toggleButtonStyle(style) {
+    document.body.classList.toggle(
+      'caramel-buttons',
+      style === 'caramel'
+    );
+    localStorage.setItem('buttonStyle', style);
+  }
 
     // 1. Цвета
     const saved = localStorage.getItem('selectedPalette');
@@ -108,27 +93,22 @@
       <div class="p-item" style="background: linear-gradient(135deg, ${p.accent}, ${p.accentDark});" data-idx="${idx}"></div>
     `).join('');
 
-    grid.querySelectorAll('.p-item').forEach(el => {
-      el.onclick = () => {
-        const idx = el.dataset.idx;
-        applyPalette(PALETTES[idx]);
-        localStorage.setItem('selectedPalette', PALETTES[idx].name);
-        // Не закрываем сразу, вдруг хочет текстуру сменить
-      };
-    });
+	document.querySelectorAll('.style-btn').forEach(btn => {
+	  btn.onclick = () => {
+		const style = btn.dataset.style;
+		toggleButtonStyle(style);
+		document
+		  .querySelectorAll('.style-btn')
+		  .forEach(b =>
+			b.classList.toggle(
+			  'active',
+			  b.dataset.style === style
+			)
+		  );
+	  };
+	});
 
-    // ВИД КНОПОК
-    document.querySelectorAll('.style-btn').forEach(btn => {
-      btn.onclick = () => {
-        const style = btn.dataset.style;
-        toggleButtonStyle(style);
-        document.querySelectorAll('.style-btn')
-          .forEach(b => b.classList.toggle('active', b.dataset.style === style));
-      };
-    });
-
-    toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
-
+	toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
 
     
     // Кнопки текстур
@@ -221,25 +201,6 @@
     updatePopulateForm();
   };
 
-  window.resetFile = () => {
-    const input = document.getElementById('manual-img-url');
-    const file = document.getElementById('manual-file');
-    input.value = '';
-    input.readOnly = false;
-    input.parentElement.classList.remove('has-file');
-    file.value = '';
-  };
-
-  document.addEventListener('change', e => {
-    if (e.target.id === 'manual-file' && e.target.files[0]) {
-      const input = document.getElementById('manual-img-url');
-      input.value = e.target.files[0].name;
-      input.readOnly = true;
-      input.parentElement.classList.add('has-file');
-    }
-  });
-
-  
   function updatePopulateForm() {
     const container = document.getElementById("populate-form");
     
@@ -247,10 +208,10 @@
       // ПОМЕНЯЛИ МЕСТАМИ: Теперь Сначала Название, потом Ссылка (так просил пользователь)
       container.innerHTML = `
         <div class="input-wrapper">
-          <input type="text" id="market-name" class="input" placeholder="Название (Джинсы)">
+          <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
         </div>
         <div class="input-wrapper">
-          <input type="text" id="market-url" class="input" placeholder="Ссылка (WB / Ozon) и др.">
+          <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
         </div>
         <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
       `;
@@ -262,17 +223,12 @@
         </div>
         
         <div class="input-wrapper file-row">
-          <div class="file-input">
-            <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
-            <span class="file-reset" onclick="window.resetFile()">✕</span>
-          </div>
-
-          <label class="gallery-btn">
-            🖼️
-            <input type="file" id="manual-file" hidden accept="image/*">
-          </label>
+            <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку (если есть)">
+            
+            <label class="gallery-btn">
+                🖼️ <input type="file" id="manual-file" hidden accept="image/*" onchange="document.getElementById('manual-img-url').value = 'Файл: ' + (this.files[0]?.name || '')">
+            </label>
         </div>
-
         
         <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>
       `;
@@ -381,9 +337,3 @@
 
   startApp();
 })();
-
-
-
-
-
-
