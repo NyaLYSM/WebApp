@@ -61,13 +61,6 @@
     if (window.initWaves) window.initWaves();
   }
 
-  function setupPalette() {
-    const paletteBtn = document.getElementById("palette-btn");
-    const overlay = document.getElementById("palette-overlay");
-    const grid = document.getElementById("palette-grid");
-    const closeBtn = document.getElementById("palette-close");
-    const autoBtn = document.getElementById("palette-auto");
-
   function toggleButtonStyle(style) {
     document.body.classList.toggle(
       'caramel-buttons',
@@ -75,6 +68,14 @@
     );
     localStorage.setItem('buttonStyle', style);
   }
+
+  function setupPalette() {
+    const paletteBtn = document.getElementById("palette-btn");
+    const overlay = document.getElementById("palette-overlay");
+    const grid = document.getElementById("palette-grid");
+    const closeBtn = document.getElementById("palette-close");
+    const autoBtn = document.getElementById("palette-auto");
+
 
     // 1. Цвета
     const saved = localStorage.getItem('selectedPalette');
@@ -340,5 +341,6 @@
 
   startApp();
 })();
+
 
 
