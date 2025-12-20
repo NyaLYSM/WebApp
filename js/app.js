@@ -209,36 +209,61 @@
   function updatePopulateForm() {
     const container = document.getElementById("populate-form");
     
-    if (currentTab === 'marketplace') {
-      // ПОМЕНЯЛИ МЕСТАМИ: Теперь Сначала Название, потом Ссылка (так просил пользователь)
-      container.innerHTML = `
-        <div class="input-wrapper">
-          <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
-        </div>
-        <div class="input-wrapper">
-          <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
-        </div>
-        <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
-      `;
-    } else {
-      // Ручное: Название, потом Ссылка на фото + Кнопка
-      container.innerHTML = `
-        <div class="input-wrapper">
-            <input type="text" id="manual-name" class="input" placeholder="Название вещи">
-        </div>
-        
-        <div class="input-wrapper file-row">
-            <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку (если есть)">
-            
-            <label class="gallery-btn">
-                🖼️ <input type="file" id="manual-file" hidden accept="image/*" onchange="document.getElementById('manual-img-url').value = 'Файл: ' + (this.files[0]?.name || '')">
-            </label>
-        </div>
-        
-        <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>
-      `;
-    }
+    function updatePopulateForm() {
+  const container = document.getElementById("populate-form");
+  
+  if (currentTab === 'marketplace') {
+    container.innerHTML = `
+      <div class="input-wrapper">
+        <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
+      </div>
+      <div class="input-wrapper">
+        <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
+      </div>
+      <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="input-wrapper">
+        <input type="text" id="manual-name" class="input" placeholder="Название вещи">
+      </div>
+
+      <div class="input-wrapper file-input">
+        <input
+          type="text"
+          id="manual-img-url"
+          class="input"
+          placeholder="Ссылка на картинку (если есть)"
+        >
+
+        <button
+          type="button"
+          class="file-reset"
+          onclick="window.resetManualFile()"
+          aria-label="Очистить"
+        >
+          ✕
+        </button>
+
+        <label class="gallery-btn">
+          🖼️
+          <input
+            type="file"
+            id="manual-file"
+            hidden
+            accept="image/*"
+            onchange="window.handleManualFile(this)"
+          >
+        </label>
+      </div>
+
+      <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">
+        Загрузить
+      </button>
+    `;
   }
+}
+
 
   // --- ПРОФИЛЬ ---
   function renderProfile() {
@@ -341,6 +366,7 @@
 
 startApp();
 })();
+
 
 
 
