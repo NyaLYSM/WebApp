@@ -282,6 +282,41 @@
       renderWardrobe();
   };
 
+
+  window.handleManualFile = (input) => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const textInput = document.getElementById('manual-img-url');
+    const wrapper = textInput.closest('.file-input');
+
+    // показываем имя файла
+    textInput.value = file.name;
+
+    // делаем поле нередактируемым
+    textInput.readOnly = true;
+
+    // показываем крестик
+    wrapper.classList.add('has-file');
+  };
+
+  window.resetManualFile = () => {
+    const fileInput = document.getElementById('manual-file');
+    const textInput = document.getElementById('manual-img-url');
+    const wrapper = textInput.closest('.file-input');
+
+    // сбрасываем файл
+    fileInput.value = '';
+
+    // очищаем поле
+    textInput.value = '';
+    textInput.readOnly = false;
+
+    // прячем крестик
+    wrapper.classList.remove('has-file');
+  };
+
+	
   window.handleAddMarket = async () => {
     const url = document.getElementById("market-url").value;
     const name = document.getElementById("market-name").value;
@@ -347,6 +382,7 @@
 
 startApp();
 })();
+
 
 
 
