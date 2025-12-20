@@ -81,10 +81,6 @@
     const startP = saved ? PALETTES.find(x => x.name === saved) : PALETTES[0];
     applyPalette(startP || PALETTES[0]);
 
-    // 2. Текстура (Карамель)
-    const savedTexture = localStorage.getItem('textureMode') || 'matte';
-    toggleTexture(savedTexture);
-
     paletteBtn.onclick = () => overlay.hidden = false;
     closeBtn.onclick = () => overlay.hidden = true;
     overlay.onclick = (e) => { if(e.target === overlay) overlay.hidden = true; };
@@ -109,12 +105,6 @@
 	});
 
 	toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
-
-    
-    // Кнопки текстур
-    textureBtns.forEach(btn => {
-        btn.onclick = () => toggleTexture(btn.dataset.mode);
-    });
     
     if(autoBtn) {
         autoBtn.onclick = () => {
@@ -337,3 +327,4 @@
 
   startApp();
 })();
+
