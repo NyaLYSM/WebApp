@@ -56,16 +56,51 @@ body {
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
   margin-bottom: 8px;
-  overflow: hidden; /* Важно для бликов */
+  overflow: hidden; 
+  /* Базовая анимация */
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s; 
 }
 
-/* --- NAVIGATION MENU (FIXED) --- */
+/* 1. ОБЫЧНЫЙ РЕЖИМ (3D Клик) */
+body:not(.caramel-buttons) .btn {
+  box-shadow: 0 4px 0 var(--accent-dark); /* Жесткая тень снизу */
+  transform: translateY(0);
+}
+body:not(.caramel-buttons) .btn:active {
+  transform: translateY(4px); /* Кнопка уходит вниз */
+  box-shadow: 0 0 0 var(--accent-dark); /* Тень исчезает */
+}
+
+/* 2. РЕЖИМ КАРАМЕЛЬ (Soft Jelly) */
+body.caramel-buttons .btn {
+  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3); /* Мягкая тень */
+  transform: scale(1);
+}
+body.caramel-buttons .btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  /* Блик сверху (эффект стекла/карамели) */
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.25) 0%,
+    rgba(255,255,255,0.05) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+body.caramel-buttons .btn:active {
+  transform: scale(0.96); /* Эффект сжатия желе */
+}
+
+
+/* --- NAVIGATION MENU --- */
 .menu { 
   position: relative;
   display: grid; grid-template-columns: repeat(2, 1fr); 
-  /* Убрали gap в гриде, будем управлять отступами внутри */
   padding: 6px; 
   background: rgba(0,0,0,0.25);
   border-radius: 18px;
@@ -73,14 +108,12 @@ body {
   border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Индикатор-слайдер */
 .menu-indicator {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   background: rgba(255,255,255,0.12);
   border-radius: 12px;
-  transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1); /* Пружинистый эффект */
   pointer-events: none;
   z-index: 0;
 }
@@ -90,8 +123,8 @@ body {
   background: transparent; border: none; 
   color: var(--muted);
   font-weight: 600; 
-  height: 46px; /* Фиксированная высота */
-  display: flex; align-items: center; justify-content: center; /* ЦЕНТРИРОВАНИЕ */
+  height: 46px; 
+  display: flex; align-items: center; justify-content: center; 
   cursor: pointer;
   transition: color 0.2s;
   font-size: 14px;
@@ -100,7 +133,6 @@ body {
 
 .menu .btn-nav.active { 
   color: #fff; 
-  /* Убрали font-weight bold чтобы не скакал текст */
   text-shadow: 0 0 15px rgba(255,255,255,0.4);
 }
 
@@ -135,13 +167,15 @@ body {
   color: #fff; font-size: 20px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  transition: transform 0.1s;
 }
+#palette-btn:active { transform: scale(0.95); }
 
 .profile-card { text-align: center; }
 .profile-name { font-size: 26px; font-weight: 800; margin-bottom: 4px; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
 .profile-id { color: var(--muted); font-family: monospace; margin-bottom: 20px; }
 
-/* Populate Tabs */
+/* Populate Tabs (Market/Manual) */
 .mode-switch {
   display: flex; background: #000; padding: 4px; border-radius: 12px; margin-bottom: 20px;
 }
@@ -163,27 +197,57 @@ body {
 }
 .item-footer { padding: 12px; display: flex; justify-content: space-between; align-items: center; }
 .item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
-.delete-icon { color: #ff5e57; background: none; border: none; font-size: 18px; cursor: pointer; }
+.delete-icon { color: #ff5e57; background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
 
-/* MODAL & TEXTURE SWITCHER */
+
+/* --- MODAL & PALETTE --- */
 .palette-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; /* Поднял выше */
   display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
 }
 .palette-modal {
   width: 90%; max-width: 360px;
   background: #18181f; 
   box-shadow: 0 25px 50px rgba(0,0,0,0.7);
   border-radius: 20px; padding: 24px;
+  border: 1px solid var(--border);
 }
-.palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
+.palette-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0 15px 0; }
 .p-item {
   height: 50px; border-radius: 12px; cursor: pointer;
   border: 2px solid transparent; transform: scale(1); transition: 0.1s;
 }
 .p-item.active { border-color: #fff; transform: scale(1.05); }
 
+/* --- ИСПРАВЛЕНИЕ: СТИЛИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ СТИЛЯ КНОПОК --- */
+.style-switch {
+  display: flex; 
+  background: #000; /* Темный фон контейнера */
+  padding: 4px; 
+  border-radius: 12px; 
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+.style-btn {
+  flex: 1; 
+  padding: 12px; 
+  border: none; 
+  background: transparent; 
+  color: var(--muted);
+  border-radius: 10px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: 14px;
+  transition: 0.2s;
+}
+.style-btn.active { 
+  background: var(--card-bg); 
+  color: #fff; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+}
+
+/* File Inputs */
 .gallery-btn {
   width: 52px; height: 52px;
   background: linear-gradient(135deg, #2d3436, #000);
@@ -193,60 +257,36 @@ body {
   font-size: 24px; cursor: pointer;
 }
 
-.loader { padding: 40px; text-align: center; color: var(--muted); }
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.card,
-.palette-modal {
-  animation: fadeUp 0.35s cubic-bezier(0.25,0.8,0.25,1);
-}
-
-body.caramel-buttons .btn::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 12px;
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.35),
-    transparent 60%
-  );
-  pointer-events: none;
-}
-
-
 .file-input {
   position: relative;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
-
 .file-input .input {
   width: 100%;
-  padding-right: 42px; /* место под крестик */
+  padding-right: 42px; 
 }
-
 .file-reset {
   position: absolute;
-  right: 56px; /* перед кнопкой галереи */
+  right: 70px; /* Отступ с учетом кнопки галереи */
   top: 50%;
   transform: translateY(-50%);
   color: #777;
   cursor: pointer;
   display: none;
   font-size: 16px;
+  padding: 10px; /* Увеличил область нажатия */
 }
+.file-input.has-file .file-reset { display: block; }
 
-.file-input.has-file .file-reset {
-  display: block;
+.loader { padding: 40px; text-align: center; color: var(--muted); }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card, .palette-modal {
+  animation: fadeUp 0.35s cubic-bezier(0.25,0.8,0.25,1);
 }
