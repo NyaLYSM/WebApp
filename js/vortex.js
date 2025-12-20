@@ -1,4 +1,4 @@
-// js/vortex.js — CINEMATIC SPIRAL HURRICANE
+// js/vortex.js — TRUE CINEMATIC TORNADO
 (function () {
   const canvas = document.getElementById("bgCanvas");
   if (!canvas) return;
@@ -15,84 +15,81 @@
   const TWO_PI = Math.PI * 2;
   let time = 0;
 
-  const STREAMS = [];
+  const RINGS = [];
+  const RING_COUNT = 90;
 
-  const STREAM_COUNT = 120;
-  const CENTER_PULL = 0.72;
+  class VortexRing {
+    constructor(level) {
+      this.level = level; // 0 (низ) -> 1 (верх)
+      this.angle = Math.random() * TWO_PI;
+      this.speed = 0.002 + (1 - level) * 0.006;
 
-  class SpiralStream {
-    constructor(layer) {
-      this.layer = layer; // глубина
-      this.seed = Math.random() * 1000;
-      this.offset = Math.random() * TWO_PI;
-      this.speed = 0.0004 + layer * 0.0006;
-      this.width = 1.2 + layer * 3.5;
-      this.length = 160 + layer * 240;
+      this.points = 8 + Math.floor(Math.random() * 6);
+      this.noise = Math.random() * 1000;
 
       const style = getComputedStyle(document.documentElement);
       this.color =
         style.getPropertyValue("--accent").trim() || "#6c5ce7";
     }
 
-    draw(t) {
-      const cx = w / 2;
-      const cy = h * 0.55;
+    update() {
+      this.angle += this.speed;
+      this.noise += 0.01;
+    }
 
-      const progress = (t * this.speed + this.offset) % 1;
+    draw() {
+      const cx = w / 2;
+      const baseY = h * (1 - this.level);
+
+      // радиус увеличивается кверху
+      const maxRadius = Math.min(w, h) * 0.45;
+      const radius =
+        maxRadius * (0.1 + this.level * this.level);
+
+      const perspective = 0.6 + this.level * 0.8;
 
       ctx.save();
+      ctx.translate(cx, baseY);
+      ctx.rotate(this.angle);
+
       ctx.beginPath();
 
-      const segments = 28;
+      for (let i = 0; i <= this.points; i++) {
+        const p = i / this.points;
+        const a = p * TWO_PI;
 
-      for (let i = 0; i <= segments; i++) {
-        const p = i / segments;
+        // неровность, как пыль / мусор
+        const jitter =
+          Math.sin(a * 3 + this.noise) * radius * 0.15;
 
-        // вертикальное движение
-        const y =
-          h - progress * h - p * this.length;
+        const r = radius + jitter;
 
-        // радиус с перспективой
-        const baseRadius =
-          Math.min(w, h) *
-          (0.05 + this.layer * 0.45);
-
-        const spiralT =
-          progress * 6 + p * 2 + this.seed;
-
-        const radius =
-          baseRadius *
-          (1 - progress * CENTER_PULL) *
-          (1 - p * 0.4);
-
-        // СПИРАЛЬ
-        const angle =
-          spiralT * TWO_PI +
-          Math.sin(p * 3 + t * 0.002) * 0.4;
-
-        const x =
-          cx + Math.cos(angle) * radius;
+        // имитация 3D (сплющивание по Y)
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r * perspective;
 
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
 
+      ctx.closePath();
+
       const alpha =
-        progress < 0.1
-          ? progress * 10
-          : progress > 0.9
-          ? 1 - (progress - 0.9) * 10
+        this.level < 0.15
+          ? this.level * 6
+          : this.level > 0.85
+          ? (1 - this.level) * 6
           : 1;
 
       ctx.strokeStyle = this.color;
-      ctx.globalAlpha = alpha * (0.08 + this.layer * 0.22);
-      ctx.lineWidth = this.width;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.globalAlpha = alpha * 0.25;
+      ctx.lineWidth = 2 + (1 - this.level) * 3;
 
-      // glow
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+
       ctx.shadowColor = this.color;
-      ctx.shadowBlur = 18 * this.layer;
+      ctx.shadowBlur = 12;
 
       ctx.stroke();
       ctx.restore();
@@ -100,11 +97,9 @@
   }
 
   function init() {
-    STREAMS.length = 0;
-
-    for (let i = 0; i < STREAM_COUNT; i++) {
-      const layer = i / STREAM_COUNT;
-      STREAMS.push(new SpiralStream(layer));
+    RINGS.length = 0;
+    for (let i = 0; i < RING_COUNT; i++) {
+      RINGS.push(new VortexRing(i / RING_COUNT));
     }
   }
 
@@ -113,11 +108,14 @@
 
     ctx.clearRect(0, 0, w, h);
 
-    // мягкий туман
-    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    // лёгкий туман
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
     ctx.fillRect(0, 0, w, h);
 
-    STREAMS.forEach(s => s.draw(time));
+    RINGS.forEach(r => {
+      r.update();
+      r.draw();
+    });
 
     requestAnimationFrame(animate);
   }
