@@ -112,4 +112,22 @@
     return res.json();
   };
 
+ window.apiUpload = async (path, formData) => {
+  const token = window.getToken();
+  const headers = {};
+  if (token && token !== "null" && token !== "undefined") {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const res = await fetch(window.BACKEND_URL + path, {
+    method: "POST",
+    headers: headers,
+    body: formData
+  });
+  
+  await handleApiError(res);
+  return res.ok ? res.json() : null;
+};
+  
 })();
+
