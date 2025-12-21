@@ -329,7 +329,6 @@
         const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
         if (res && res.access_token) {
           window.setToken(res.access_token);
-          renderWardrobe(); 
         }
       } catch(e) {}
     }
@@ -337,3 +336,4 @@
 
   startApp();
 })();
+
