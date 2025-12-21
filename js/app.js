@@ -330,44 +330,43 @@
     `;
   }
 
-  async function startApp1() {
+  async function startApp() {
     setupPalette();
+  
     navButtons.forEach(btn => {
       btn.onclick = () => loadSection(btn.dataset.section, btn);
     });
+
     const startBtn = document.querySelector('[data-section=wardrobe]');
+  
+    // СНАЧАЛА пытаемся авторизоваться через Telegram
+    if (tg && tg.initData && !window.getToken()) {
+      try {
+        content.innerHTML = `<div class="loader">Авторизация...</div>`;
+        const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+        if (res && res.access_token) {
+          window.setToken(res.access_token);
+        }
+      } catch(e) {
+        console.warn("TG auth failed:", e);
+      }
+    }
+
+    // ПОТОМ загружаем интерфейс
     requestAnimationFrame(() => {
       if (window.getToken()) {
         loadSection('wardrobe', startBtn);
       } else {
+        // Если токена нет - показываем populate
         const populateBtn = document.querySelector('[data-section="populate"]');
         loadSection('populate', populateBtn);
       }
       setTimeout(() => moveWave(startBtn), 100);
     });
-  } // <- добавлена закрывающая скобка
+  }
 
-  async function startApp2() {
-    if (tg && tg.initData && !window.getToken() && !tgAuthInProgress) {
-      tgAuthInProgress = true;
-      try {
-        const res = await window.apiPost('/api/auth/tg-login', {
-          initData: tg.initData
-        });
-        if (res && res.access_token) {
-          window.setToken(res.access_token);
-          const wardrobeBtn = document.querySelector('[data-section="wardrobe"]');
-          loadSection('wardrobe', wardrobeBtn);
-        }
-      } catch (e) {
-        console.warn("TG login failed", e);
-      }
-    }
-  } // <- добавлена закрывающая скобка
+  startApp();
 
-  startApp1(); // <- исправлено имя функции
-  startApp2();
-  })();
 
 
 
