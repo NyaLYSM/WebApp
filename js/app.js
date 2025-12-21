@@ -287,7 +287,7 @@
       }
       
       // ИСПРАВЛЕНИЕ: МЕНЯЕМ АДРЕС С /upload НА /add
-      await window.apiUpload('/api/wardrobe/add', formData);
+      await window.apiUpload('/api/wardrobe/upload', formData);
       
       loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
     } catch (e) { 
@@ -336,4 +336,5 @@
 
   startApp();
 })();
+
 
