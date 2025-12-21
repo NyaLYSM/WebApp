@@ -1,105 +1,115 @@
-// js/api.js — FIXED UPLOAD & AUTH
+// js/api.js — STABLE AUTH & UPLOAD VERSION
 (function () {
-  // Настройка URL бэкенда
+
+  // ===============================
+  // BACKEND URL
+  // ===============================
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
   }
 
-  // Управление токеном
+  // ===============================
+  // TOKEN MANAGEMENT
+  // ===============================
   window.getToken = () => localStorage.getItem("access_token");
   window.setToken = (t) => localStorage.setItem("access_token", t);
   window.clearToken = () => localStorage.removeItem("access_token");
 
-  // Формирование заголовков
-  // json = true -> добавляем Content-Type: application/json
-  // json = false -> не добавляем Content-Type (нужно для FormData/Upload)
+  // ===============================
+  // HEADERS
+  // ===============================
   function getHeaders(json = true) {
-    const h = {};
+    const headers = {};
     const token = window.getToken();
-    
-    // Проверяем токен на валидность строки
+
     if (token && token !== "null" && token !== "undefined") {
-      h["Authorization"] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
-    
+
     if (json) {
-      h["Content-Type"] = "application/json";
+      headers["Content-Type"] = "application/json";
     }
-    
-    return h;
+
+    return headers;
   }
 
-  // Обработка ошибок
+  // ===============================
+  // ERROR HANDLER (CRITICAL)
+  // ===============================
   async function handleApiError(res) {
     if (res.status === 401) {
-      console.warn("Сессия истекла (401). Токен очищен.");
+      console.warn("⛔ 401 Unauthorized — token cleared");
       window.clearToken();
-      // Можно добавить редирект или перезагрузку, если нужно
-      return; 
+      throw new Error("UNAUTHORIZED");
     }
+
     if (!res.ok) {
-      const details = await res.text();
-      throw new Error(`Ошибка API ${res.status}: ${details}`);
+      const text = await res.text();
+      throw new Error(`API ${res.status}: ${text}`);
     }
   }
 
-  // Прогрев
-  window.waitForBackend = async () => {
-    console.log("Проверка связи с сервером...");
-    for (let i = 0; i < 5; i++) {
-      try {
-        const res = await fetch(window.BACKEND_URL + "/health");
-        if (res.ok) return true;
-      } catch (e) {}
-      await new Promise(r => setTimeout(r, 2000));
-    }
-    return false;
-  };
-
-  // --- МЕТОДЫ ---
+  // ===============================
+  // API METHODS
+  // ===============================
 
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { 
-      headers: getHeaders(true) // Можно true или false для GET, но обычно JSON ок
-    });
+    const res = await fetch(
+      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
+      {
+        method: "GET",
+        headers: getHeaders(true)
+      }
+    );
+
     await handleApiError(res);
-    return res.ok ? res.json() : [];
+    return res.json();
   };
 
   window.apiPost = async (path, payload = {}) => {
-    const res = await fetch(window.BACKEND_URL + path, {
-      method: "POST",
-      headers: getHeaders(true), // Content-Type: application/json
-      body: JSON.stringify(payload)
-    });
+    const res = await fetch(
+      window.BACKEND_URL + path,
+      {
+        method: "POST",
+        headers: getHeaders(true),
+        body: JSON.stringify(payload)
+      }
+    );
+
     await handleApiError(res);
-    return res.ok ? res.json() : null;
+    return res.json();
   };
 
   window.apiDelete = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), {
-      method: "DELETE",
-      headers: getHeaders(false)
-    });
+    const res = await fetch(
+      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
+      {
+        method: "DELETE",
+        headers: getHeaders(false)
+      }
+    );
+
     await handleApiError(res);
-    return res.ok ? res.json() : null;
+    return res.json();
   };
 
-  // ВОТ ОНА — ПРОПАВШАЯ ФУНКЦИЯ
+  // ===============================
+  // FILE UPLOAD (FormData)
+  // ===============================
   window.apiUpload = async (path, formData) => {
-    // ВАЖНО: getHeaders(false) не добавляет Content-Type,
-    // чтобы браузер сам выставил multipart/form-data boundary
-    const headers = getHeaders(false); 
+    const res = await fetch(
+      window.BACKEND_URL + path,
+      {
+        method: "POST",
+        headers: getHeaders(false), // ONLY Authorization
+        body: formData
+      }
+    );
 
-    const res = await fetch(window.BACKEND_URL + path, {
-      method: "POST",
-      headers: headers, // Тут только Authorization
-      body: formData
-    });
     await handleApiError(res);
-    return res.ok ? res.json() : null;
+    return res.json();
   };
 
 })();
