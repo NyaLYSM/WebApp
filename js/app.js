@@ -330,12 +330,11 @@
     `;
   }
 
-  async function startApp() {
+  async function startApp1() {
     setupPalette();
     navButtons.forEach(btn => {
       btn.onclick = () => loadSection(btn.dataset.section, btn);
     });
-
     const startBtn = document.querySelector('[data-section=wardrobe]');
     requestAnimationFrame(() => {
       if (window.getToken()) {
@@ -346,20 +345,17 @@
       }
       setTimeout(() => moveWave(startBtn), 100);
     });
+  } // <- добавлена закрывающая скобка
 
-
-
+  async function startApp2() {
     if (tg && tg.initData && !window.getToken() && !tgAuthInProgress) {
       tgAuthInProgress = true;
-
       try {
         const res = await window.apiPost('/api/auth/tg-login', {
           initData: tg.initData
         });
-
-        if (res?.access_token) {
+        if (res && res.access_token) {
           window.setToken(res.access_token);
-
           const wardrobeBtn = document.querySelector('[data-section="wardrobe"]');
           loadSection('wardrobe', wardrobeBtn);
         }
@@ -367,10 +363,12 @@
         console.warn("TG login failed", e);
       }
     }
-  
+  } // <- добавлена закрывающая скобка
 
-  startApp();
-})();
+  startApp1(); // <- исправлено имя функции
+  startApp2();
+  })();
+
 
 
 
