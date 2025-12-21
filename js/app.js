@@ -16,6 +16,8 @@
   const navButtons = document.querySelectorAll(".menu .btn-nav");
   const wave = document.getElementById("menu-wave");
   let currentTab = 'marketplace'; 
+  let wardrobeLoading = false;
+  let tgAuthInProgress = false;
 
   // =================================================================================
   // 1. WAVE ANIMATION
@@ -131,6 +133,9 @@
 
   // --- ГАРДЕРОБ ---
   async function renderWardrobe() {
+    if (wardrobeLoading) return;
+    wardrobeLoading = true;
+
     if (!window.getToken()) {
       content.innerHTML = `
         <div class="card" style="text-align:center;">
@@ -138,6 +143,7 @@
           <p>Авторизуйтесь через Telegram</p>
         </div>
       `;
+      wardrobeLoading = false;
       return;
     }
     
@@ -151,6 +157,7 @@
                 <p>Ваш гардероб пока пуст.</p>
                 <button class="btn" onclick="document.querySelector('[data-section=populate]').click()">Добавить</button>
             </div>`;
+        wardrobeLoading = false;
         return;
       }
       content.innerHTML = `
@@ -167,6 +174,7 @@
         </div>
       `;
     } catch (e) {
+      wardrobeLoading = false;
       content.innerHTML = `<div class="card" style="color:#ff5e57;">Ошибка: ${e.message}</div>`;
     }
   }
@@ -341,22 +349,29 @@
 
 
 
-    if (tg && tg.initData) {
+    if (tg && tg.initData && !window.getToken() && !tgAuthInProgress) {
+      tgAuthInProgress = true;
+
       try {
-        const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
-        if (res && res.access_token) {
+        const res = await window.apiPost('/api/auth/tg-login', {
+          initData: tg.initData
+        });
+
+        if (res?.access_token) {
           window.setToken(res.access_token);
 
           const wardrobeBtn = document.querySelector('[data-section="wardrobe"]');
           loadSection('wardrobe', wardrobeBtn);
         }
-
-      } catch(e) {}
+      } catch (e) {
+        console.warn("TG login failed", e);
+      }
     }
-  }
+  
 
   startApp();
 })();
+
 
 
 
