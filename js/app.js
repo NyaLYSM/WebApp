@@ -131,6 +131,16 @@
 
   // --- ГАРДЕРОБ ---
   async function renderWardrobe() {
+    if (!window.getToken()) {
+      content.innerHTML = `
+        <div class="card" style="text-align:center;">
+          <h3>🔒 Требуется вход</h3>
+          <p>Авторизуйтесь через Telegram</p>
+        </div>
+      `;
+      return;
+    }
+    
     content.innerHTML = `<div class="loader">Синхронизация...</div>`;
     try {
       const items = await window.apiGet('/api/wardrobe/items');
@@ -320,9 +330,14 @@
 
     const startBtn = document.querySelector('[data-section=wardrobe]');
     requestAnimationFrame(() => {
+      if (window.getToken()) {
         loadSection('wardrobe', startBtn);
-        setTimeout(() => moveWave(startBtn), 100);
+      } else {
+        loadSection('populate', document.querySelector('[data-section=populate]'));
+      }
+      setTimeout(() => moveWave(startBtn), 100);
     });
+
 
     if (tg && tg.initData) {
       try {
@@ -336,6 +351,7 @@
 
   startApp();
 })();
+
 
 
 
