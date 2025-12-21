@@ -333,10 +333,12 @@
       if (window.getToken()) {
         loadSection('wardrobe', startBtn);
       } else {
-        loadSection('populate', document.querySelector('[data-section=populate]'));
+        const populateBtn = document.querySelector('[data-section="populate"]');
+        loadSection('populate', populateBtn);
       }
       setTimeout(() => moveWave(startBtn), 100);
     });
+
 
 
     if (tg && tg.initData) {
@@ -344,13 +346,18 @@
         const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
         if (res && res.access_token) {
           window.setToken(res.access_token);
+
+          const wardrobeBtn = document.querySelector('[data-section="wardrobe"]');
+          loadSection('wardrobe', wardrobeBtn);
         }
+
       } catch(e) {}
     }
   }
 
   startApp();
 })();
+
 
 
 
