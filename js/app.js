@@ -283,29 +283,37 @@
     const fileInp = document.getElementById("manual-file");
     const urlInp = document.getElementById("manual-img-url").value;
 
-    if (!name || (!fileInp.files[0] && !urlInp)) return alert("Нужно имя и фото");
+    // Проверка: нужно имя И (файл ИЛИ ссылка)
+    if (!name) return alert("Введите название вещи");
+    if (!fileInp.files[0] && !urlInp) return alert("Добавьте фото (файл или ссылку)");
 
     const btn = document.querySelector("#populate-form .btn");
     setBtnLoading(btn, true);
 
     try {
-      const formData = new FormData();
-      formData.append("name", name);
-      if(fileInp.files[0]) {
-          formData.append("file", fileInp.files[0]);
-      } else {
-          formData.append("image_url", urlInp);
-      }
+      // ВАРИАНТ 1: Загрузка файла
+      if (fileInp.files[0]) {
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("file", fileInp.files[0]);
       
-      await window.apiUpload('/api/wardrobe/add-file', formData);
-      // Успех -> идем в гардероб
-      document.querySelector('[data-section=wardrobe]').click();
-    } catch (e) { 
-        alert("Ошибка сервера: " + e.message); 
-    } finally {
-        setBtnLoading(btn, false); 
-    }
-  };
+        await window.apiUpload('/api/wardrobe/add-file', formData);
+      } 
+      // ВАРИАНТ 2: Загрузка по URL
+      else if (urlInp) {
+        await window.apiPost('/api/wardrobe/add-manual-url', { 
+          name: name,
+          url: urlInp 
+        });
+      }
+
+    // Успех - переходим в гардероб
+    loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+    setBtnLoading(btn, false);
+  }
+};
 
   // --- PROFILE ---
   function renderProfile() {
@@ -378,5 +386,6 @@
 
   startApp();
 })();
+
 
 
