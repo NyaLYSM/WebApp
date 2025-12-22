@@ -88,12 +88,23 @@
   };
 
   window.apiUpload = async (path, formData) => {
-    const res = await safeFetch(window.BACKEND_URL + path, {
+    const token = window.getToken();
+    const headers = {};
+  
+    // Добавляем токен только если он валидный
+    if (token && token !== "null" && token !== "undefined") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  
+    const res = await fetch(window.BACKEND_URL + path, {
       method: "POST",
-      headers: getHeaders(false), // Важно: без Content-Type для FormData
+      headers: headers,
       body: formData
     });
-    return res ? res.json() : null;
+  
+    await handleApiError(res);
+    return res.ok ? res.json() : null;
   };
 
 })();
+
