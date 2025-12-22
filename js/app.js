@@ -317,9 +317,6 @@
         <div class="stats-row" style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
            <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
            <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">V 3.1</div>
-        </div>
-        <button class="btn" style="margin-top:20px; background: #ff5e57;" onclick="window.clearToken(); location.reload();">Выйти</button>
-      </div>
     `;
   }
 
@@ -381,4 +378,5 @@
 
   startApp();
 })();
+
 
