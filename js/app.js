@@ -1,4 +1,4 @@
-// js/app.js - FIXED UPLOAD ROUTE & CACHE BUSTING
+// js/app.js — ROBUST START & ERROR HANDLING
 
 (function() {
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -16,12 +16,8 @@
   const navButtons = document.querySelectorAll(".menu .btn-nav");
   const wave = document.getElementById("menu-wave");
   let currentTab = 'marketplace'; 
-  let wardrobeLoading = false;
-  let tgAuthInProgress = false;
 
-  // =================================================================================
-  // 1. WAVE ANIMATION
-  // =================================================================================
+  // --- WAVE ANIMATION ---
   function moveWave(targetBtn) {
       if(!targetBtn) return;
       const parent = document.getElementById('nav-menu');
@@ -34,9 +30,7 @@
       wave.style.transform = `translate(${relX}px, ${relY}px)`;
   }
 
-  // =================================================================================
-  // 2. THEMES & TEXTURES
-  // =================================================================================
+  // --- THEMES ---
   const PALETTES = [
     { name: "Graphite", bg: "#0b0b12", card: "#15151a", accent: "#6c5ce7", accentDark: "#483d8b" },
     { name: "Rose", bg: "#160b0f", card: "#1f1015", accent: "#e84393", accentDark: "#b71569" },
@@ -97,20 +91,13 @@
         document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
       };
     });
-
     toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
-    
     if(autoBtn) {
-        autoBtn.onclick = () => {
-            applyPalette(PALETTES[0]); 
-            overlay.hidden = true;
-        }
+        autoBtn.onclick = () => { applyPalette(PALETTES[0]); overlay.hidden = true; }
     }
   }
 
-  // =================================================================================
-  // 3. NAVIGATION
-  // =================================================================================
+  // --- NAVIGATION ---
   async function loadSection(section, btnElement) {
     if(btnElement) {
         navButtons.forEach(b => b.classList.remove('active'));
@@ -131,35 +118,30 @@
     else if (section === 'profile') renderProfile();
   }
 
-  // --- ГАРДЕРОБ ---
+  // --- ГАРДЕРОБ (С ЗАЩИТОЙ ОТ ОШИБОК) ---
   async function renderWardrobe() {
-    if (wardrobeLoading) return;
-    wardrobeLoading = true;
-
-    if (!window.getToken()) {
-      content.innerHTML = `
-        <div class="card" style="text-align:center;">
-          <h3>🔒 Требуется вход</h3>
-          <p>Авторизуйтесь через Telegram</p>
-        </div>
-      `;
-      wardrobeLoading = false;
-      return;
-    }
+    // 1. Сразу показываем лоадер, чтобы пользователь понял, что процесс пошел
+    content.innerHTML = `<div class="loader">
+        <div style="font-size:24px; margin-bottom:10px;">☁️</div>
+        Загрузка гардероба...
+    </div>`;
     
-    content.innerHTML = `<div class="loader">Синхронизация...</div>`;
     try {
+      // 2. Делаем запрос
       const items = await window.apiGet('/api/wardrobe/items');
+      
+      // 3. Если успех, но пусто
       if (!items || items.length === 0) {
         content.innerHTML = `
             <div class="card" style="text-align:center; padding: 40px 20px;">
                 <h3>Пусто</h3>
                 <p>Ваш гардероб пока пуст.</p>
-                <button class="btn" onclick="document.querySelector('[data-section=populate]').click()">Добавить</button>
+                <button class="btn" onclick="document.querySelector('[data-section=populate]').click()">Добавить первую вещь</button>
             </div>`;
-        wardrobeLoading = false;
         return;
       }
+      
+      // 4. Если есть вещи
       content.innerHTML = `
         <div class="wardrobe-grid">
           ${items.map(item => `
@@ -174,8 +156,17 @@
         </div>
       `;
     } catch (e) {
-      wardrobeLoading = false;
-      content.innerHTML = `<div class="card" style="color:#ff5e57;">Ошибка: ${e.message}</div>`;
+      // 5. Если ошибка (сервер упал или нет интернета)
+      console.error(e);
+      content.innerHTML = `
+        <div class="card" style="text-align:center; color:#ff5e57;">
+            <h3>Ошибка связи 📡</h3>
+            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">
+                Не удалось загрузить вещи. Возможно, сервер просыпается.
+            </p>
+            <p style="font-size:11px; background:#000; padding:5px; border-radius:4px;">${e.message}</p>
+            <button class="btn" onclick="window.renderWardrobe()" style="margin-top:15px;">Попробовать снова</button>
+        </div>`;
     }
   }
 
@@ -281,8 +272,10 @@
     setBtnLoading(btn, true);
     try {
       await window.apiPost('/api/wardrobe/add-marketplace', { url, name: name || "Покупка" });
-      loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
-    } catch (e) { alert(e.message); setBtnLoading(btn, false); }
+      alert("Добавлено!");
+      document.getElementById("market-url").value = "";
+    } catch (e) { alert(e.message); }
+    finally { setBtnLoading(btn, false); }
   };
 
   window.handleAddManual = async () => {
@@ -304,74 +297,87 @@
           formData.append("image_url", urlInp);
       }
       
-      // ИСПРАВЛЕНИЕ: МЕНЯЕМ АДРЕС С /upload НА /add
-      await window.apiUpload('/api/wardrobe/add-file', formData);
-      
-      loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
+      await window.apiUpload('/api/wardrobe/add', formData);
+      // Успех -> идем в гардероб
+      document.querySelector('[data-section=wardrobe]').click();
     } catch (e) { 
-        // Если снова 404, значит сервер вообще не принимает файлы на этом пути
         alert("Ошибка сервера: " + e.message); 
+    } finally {
         setBtnLoading(btn, false); 
     }
   };
 
-  // --- START ---
+  // --- PROFILE ---
   function renderProfile() {
     const user = tg?.initDataUnsafe?.user || {};
     content.innerHTML = `
       <div class="card profile-card">
-        <div class="profile-name">${user.first_name || "Guest"}</div>
+        <div class="profile-name">${user.first_name || "Гость"}</div>
         <div class="profile-id">ID: ${user.id || "Unknown"}</div>
-        <div class="stats-row">
-           <div class="stat-box">PRO</div>
-           <div class="stat-box">V. 2.3</div>
+        <div class="stats-row" style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
+           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">V 3.1</div>
         </div>
+        <button class="btn" style="margin-top:20px; background: #ff5e57;" onclick="window.clearToken(); location.reload();">Выйти</button>
       </div>
     `;
   }
 
+  // --- INITIALIZATION (ГЛАВНЫЙ ФИКС) ---
   async function startApp() {
     setupPalette();
-  
+
+    // Навешиваем обработчики меню
     navButtons.forEach(btn => {
       btn.onclick = () => loadSection(btn.dataset.section, btn);
     });
 
-    const startBtn = document.querySelector('[data-section=wardrobe]');
-  
-    // СНАЧАЛА пытаемся авторизоваться через Telegram
-    if (tg && tg.initData && !window.getToken()) {
+    // 1. Показываем экран "Просыпаемся"
+    content.innerHTML = `
+        <div class="card" style="text-align:center; padding: 40px 20px;">
+            <div style="font-size:40px; margin-bottom:20px;">☕️</div>
+            <h3>Сервер просыпается...</h3>
+            <p style="color:var(--muted);">Бесплатный сервер может спать до 50 секунд. Пожалуйста, подождите.</p>
+        </div>
+    `;
+
+    // 2. Ждем ответа от сервера (до 60 секунд)
+    let serverReady = false;
+    for(let i=0; i<30; i++) { // 30 попыток по 2 сек
+        if(await window.checkBackendHealth()) {
+            serverReady = true;
+            break;
+        }
+        await new Promise(r => setTimeout(r, 2000));
+    }
+
+    if(!serverReady) {
+        content.innerHTML = `
+            <div class="card" style="text-align:center;">
+                <h3>Сервер не отвечает 😴</h3>
+                <p>Попробуйте перезагрузить бота позже.</p>
+                <button class="btn" onclick="location.reload()">Обновить</button>
+            </div>`;
+        return;
+    }
+
+    // 3. Сервер жив! Пробуем авторизоваться (если есть данные Телеграм)
+    if (tg && tg.initData) {
       try {
-        content.innerHTML = `<div class="loader">Авторизация...</div>`;
         const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
         if (res && res.access_token) {
           window.setToken(res.access_token);
         }
       } catch(e) {
-        console.warn("TG auth failed:", e);
+         console.warn("Auth failed or already logged in", e);
       }
     }
 
-    // ПОТОМ загружаем интерфейс
-    requestAnimationFrame(() => {
-      if (window.getToken()) {
-        loadSection('wardrobe', startBtn);
-      } else {
-        // Если токена нет - показываем populate
-        const populateBtn = document.querySelector('[data-section="populate"]');
-        loadSection('populate', populateBtn);
-      }
-      setTimeout(() => moveWave(startBtn), 100);
-    });
+    // 4. Загружаем гардероб (теперь точно безопасно)
+    const startBtn = document.querySelector('[data-section=wardrobe]');
+    loadSection('wardrobe', startBtn);
+    setTimeout(() => moveWave(startBtn), 100);
   }
 
   startApp();
 })();
-
-
-
-
-
-
-
-
