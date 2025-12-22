@@ -297,7 +297,7 @@
           formData.append("image_url", urlInp);
       }
       
-      await window.apiUpload('/api/wardrobe/add', formData);
+      await window.apiUpload('/api/wardrobe/add-file', formData);
       // Успех -> идем в гардероб
       document.querySelector('[data-section=wardrobe]').click();
     } catch (e) { 
@@ -381,3 +381,4 @@
 
   startApp();
 })();
+
