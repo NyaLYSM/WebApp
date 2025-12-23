@@ -1,4 +1,4 @@
-// js/api.js — FIXED NETWORK HANDLING & AUTH
+// js/api.js — FIXED NETWORK HANDLING & AUTH + TIMEOUT
 (function () {
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
@@ -25,65 +25,93 @@
     if (res.status === 401) {
       console.warn("401 Unauthorized. Токен устарел.");
       window.clearToken();
-      // Здесь можно вызвать событие, чтобы UI показал экран входа, но пока просто чистим
       return; 
     }
     if (!res.ok) {
-      // Пытаемся прочитать текст ошибки, если сервер что-то ответил
       let msg = res.statusText;
       try { msg = await res.text(); } catch(e){}
       throw new Error(`Ошибка ${res.status}: ${msg}`);
     }
   }
 
+  // Fetch с timeout
+  async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Превышено время ожидания. Попробуйте еще раз.');
+      }
+      throw error;
+    }
+  }
+
   // Глобальная функция проверки статуса сервера
   window.checkBackendHealth = async () => {
     try {
-      const res = await fetch(window.BACKEND_URL + "/health", { method: 'GET' });
+      const res = await fetchWithTimeout(window.BACKEND_URL + "/health", { method: 'GET' }, 5000);
       return res.ok;
     } catch (e) {
-      return false; // Сервер лежит или сеть недоступна
+      return false;
     }
   };
 
-  // Обертка для fetch, чтобы ловить NetworkError (когда сервер лежит)
-  async function safeFetch(url, options) {
+  // Обертка для fetch с обработкой ошибок
+  async function safeFetch(url, options, timeout = 30000) {
     try {
-      const res = await fetch(url, options);
+      const res = await fetchWithTimeout(url, options, timeout);
       await handleApiError(res);
       return res;
     } catch (e) {
-      // Если это NetworkError, скорее всего сервер спит
       console.error("Fetch error:", e);
       throw e;
     }
   }
 
-  // --- МЕТОДЫ ---
-
+  // --- МЕТОДЫ API ---
+  
   window.apiGet = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await safeFetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), { 
-      headers: getHeaders(true) 
-    });
+    const res = await safeFetch(
+      window.BACKEND_URL + path + (qs ? "?" + qs : ""), 
+      { headers: getHeaders(false) },
+      15000  // 15 секунд для GET
+    );
     return res ? res.json() : [];
   };
 
   window.apiPost = async (path, payload = {}) => {
-    const res = await safeFetch(window.BACKEND_URL + path, {
-      method: "POST",
-      headers: getHeaders(true),
-      body: JSON.stringify(payload)
-    });
+    const res = await safeFetch(
+      window.BACKEND_URL + path,
+      {
+        method: "POST",
+        headers: getHeaders(true),
+        body: JSON.stringify(payload)
+      },
+      45000  // 45 секунд для POST (маркетплейсы долго грузят)
+    );
     return res ? res.json() : null;
   };
 
   window.apiDelete = async (path, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    const res = await safeFetch(window.BACKEND_URL + path + (qs ? "?" + qs : ""), {
-      method: "DELETE",
-      headers: getHeaders(false)
-    });
+    const res = await safeFetch(
+      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
+      {
+        method: "DELETE",
+        headers: getHeaders(false)
+      },
+      15000
+    );
     return res ? res.json() : null;
   };
 
@@ -91,20 +119,21 @@
     const token = window.getToken();
     const headers = {};
   
-    // Добавляем токен только если он валидный
     if (token && token !== "null" && token !== "undefined") {
       headers["Authorization"] = `Bearer ${token}`;
     }
   
-    const res = await fetch(window.BACKEND_URL + path, {
-      method: "POST",
-      headers: headers,
-      body: formData
-    });
+    // Используем safeFetch с увеличенным timeout для загрузки файлов
+    const res = await safeFetch(
+      window.BACKEND_URL + path,
+      {
+        method: "POST",
+        headers: headers,
+        body: formData
+      },
+      60000  // 60 секунд для загрузки файлов
+    );
   
-    await handleApiError(res);
-    return res.ok ? res.json() : null;
+    return res ? res.json() : null;
   };
-
 })();
-
