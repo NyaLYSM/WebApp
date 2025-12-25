@@ -342,7 +342,7 @@
         <div class="card" style="text-align:center; padding: 40px 20px;">
             <div style="font-size:40px; margin-bottom:20px;">☕️</div>
             <h3>Сервер просыпается...</h3>
-            <p style="color:var(--muted);">Бесплатный сервер может спать до 50 секунд. Пожалуйста, подождите.</p>
+            <p style="color:var(--muted);">Сервер может спать до 50 секунд. Пожалуйста, подождите.</p>
         </div>
     `;
 
@@ -386,6 +386,7 @@
 
   startApp();
 })();
+
 
 
 
