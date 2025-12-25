@@ -1,4 +1,4 @@
-// js/api.js — FIXED NETWORK HANDLING & AUTH + TIMEOUT
+// js/api.js — FIXED NETWORK HANDLING, AUTH & CRASH PROTECTION
 (function () {
   if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
@@ -25,7 +25,7 @@
     if (res.status === 401) {
       console.warn("401 Unauthorized. Токен устарел.");
       window.clearToken();
-      return; 
+      throw new Error("UNAUTHORIZED"); // Специальная ошибка для отлова
     }
     if (!res.ok) {
       let msg = res.statusText;
@@ -72,6 +72,7 @@
       await handleApiError(res);
       return res;
     } catch (e) {
+      if (e.message === "UNAUTHORIZED") throw e; // Пробрасываем 401 выше
       console.error("Fetch error:", e);
       throw e;
     }
@@ -80,60 +81,74 @@
   // --- МЕТОДЫ API ---
   
   window.apiGet = async (path, params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    const res = await safeFetch(
-      window.BACKEND_URL + path + (qs ? "?" + qs : ""), 
-      { headers: getHeaders(false) },
-      15000  // 15 секунд для GET
-    );
-    return res ? res.json() : [];
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await safeFetch(
+        window.BACKEND_URL + path + (qs ? "?" + qs : ""), 
+        { headers: getHeaders(false) },
+        15000
+      );
+      return await res.json();
+    } catch (e) {
+      // ГЛАВНЫЙ ФИКС: Если ошибка, возвращаем пустой массив, а не падаем
+      console.warn("apiGet failed, returning empty array:", e);
+      return []; 
+    }
   };
 
   window.apiPost = async (path, payload = {}) => {
-    const res = await safeFetch(
-      window.BACKEND_URL + path,
-      {
-        method: "POST",
-        headers: getHeaders(true),
-        body: JSON.stringify(payload)
-      },
-      45000  // 45 секунд для POST (маркетплейсы долго грузят)
-    );
-    return res ? res.json() : null;
+    try {
+      const res = await safeFetch(
+        window.BACKEND_URL + path,
+        {
+          method: "POST",
+          headers: getHeaders(true),
+          body: JSON.stringify(payload)
+        },
+        45000
+      );
+      return await res.json();
+    } catch (e) {
+      if (e.message === "UNAUTHORIZED") return null;
+      throw e;
+    }
   };
 
   window.apiDelete = async (path, params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    const res = await safeFetch(
-      window.BACKEND_URL + path + (qs ? "?" + qs : ""),
-      {
-        method: "DELETE",
-        headers: getHeaders(false)
-      },
-      15000
-    );
-    return res ? res.json() : null;
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await safeFetch(
+        window.BACKEND_URL + path + (qs ? "?" + qs : ""),
+        {
+          method: "DELETE",
+          headers: getHeaders(false)
+        },
+        15000
+      );
+      return await res.json();
+    } catch (e) { return null; }
   };
 
   window.apiUpload = async (path, formData) => {
-    const token = window.getToken();
-    const headers = {};
-  
-    if (token && token !== "null" && token !== "undefined") {
-      headers["Authorization"] = `Bearer ${token}`;
+    // ВАЖНО: apiUpload должен сам обрабатывать try/catch или пробрасывать, 
+    // но лучше вернуть null при ошибке, чтобы UI не завис
+    try {
+        const token = window.getToken();
+        const headers = {};
+        if (token && token !== "null") headers["Authorization"] = `Bearer ${token}`;
+      
+        const res = await safeFetch(
+          window.BACKEND_URL + path,
+          {
+            method: "POST",
+            headers: headers,
+            body: formData
+          },
+          60000
+        );
+        return await res.json();
+    } catch (e) {
+        throw e; // Upload пусть падает, чтобы мы показали alert пользователю
     }
-  
-    // Используем safeFetch с увеличенным timeout для загрузки файлов
-    const res = await safeFetch(
-      window.BACKEND_URL + path,
-      {
-        method: "POST",
-        headers: headers,
-        body: formData
-      },
-      60000  // 60 секунд для загрузки файлов
-    );
-  
-    return res ? res.json() : null;
   };
 })();
