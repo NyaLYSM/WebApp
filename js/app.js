@@ -118,20 +118,23 @@
     else if (section === 'profile') renderProfile();
   }
 
-  // --- ГАРДЕРОБ (С ЗАЩИТОЙ ОТ ОШИБОК) ---
+  // --- ГАРДЕРОБ (С ФИКСОМ items.map) ---
   async function renderWardrobe() {
-    // 1. Сразу показываем лоадер, чтобы пользователь понял, что процесс пошел
     content.innerHTML = `<div class="loader">
         <div style="font-size:24px; margin-bottom:10px;">☁️</div>
         Загрузка гардероба...
     </div>`;
     
     try {
-      // 2. Делаем запрос
-      const items = await window.apiGet('/api/wardrobe/items');
+      let items = await window.apiGet('/api/wardrobe/items');
       
-      // 3. Если успех, но пусто
-      if (!items || items.length === 0) {
+      // ФИКС: Если пришел не массив (null, undefined, ошибка), делаем пустой массив
+      if (!Array.isArray(items)) {
+          console.warn("Данные гардероба некорректны (не массив), сбрасываем.", items);
+          items = [];
+      }
+      
+      if (items.length === 0) {
         content.innerHTML = `
             <div class="card" style="text-align:center; padding: 40px 20px;">
                 <h3>Пусто</h3>
@@ -141,7 +144,6 @@
         return;
       }
       
-      // 4. Если есть вещи
       content.innerHTML = `
         <div class="wardrobe-grid">
           ${items.map(item => `
@@ -156,16 +158,12 @@
         </div>
       `;
     } catch (e) {
-      // 5. Если ошибка (сервер упал или нет интернета)
       console.error(e);
       content.innerHTML = `
         <div class="card" style="text-align:center; color:#ff5e57;">
-            <h3>Ошибка связи 📡</h3>
-            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">
-                Не удалось загрузить вещи. Возможно, сервер просыпается.
-            </p>
-            <p style="font-size:11px; background:#000; padding:5px; border-radius:4px;">${e.message}</p>
-            <button class="btn" onclick="window.renderWardrobe()" style="margin-top:15px;">Попробовать снова</button>
+            <h3>Ошибка связи</h3>
+            <p style="font-size:11px; margin-bottom:10px;">${e.message}</p>
+            <button class="btn" onclick="window.renderWardrobe()">Попробовать снова</button>
         </div>`;
     }
   }
@@ -283,7 +281,6 @@
     const fileInp = document.getElementById("manual-file");
     const urlInp = document.getElementById("manual-img-url").value;
 
-    // Проверка: нужно имя И (файл ИЛИ ссылка)
     if (!name) return alert("Введите название вещи");
     if (!fileInp.files[0] && !urlInp) return alert("Добавьте фото (файл или ссылку)");
 
@@ -291,29 +288,21 @@
     setBtnLoading(btn, true);
 
     try {
-      // ВАРИАНТ 1: Загрузка файла
       if (fileInp.files[0]) {
         const formData = new FormData();
         formData.append("name", name);
         formData.append("file", fileInp.files[0]);
-      
         await window.apiUpload('/api/wardrobe/add-file', formData);
-      } 
-      // ВАРИАНТ 2: Загрузка по URL
-      else if (urlInp) {
-        await window.apiPost('/api/wardrobe/add-manual-url', { 
-          name: name,
-          url: urlInp 
-        });
+      } else if (urlInp) {
+        await window.apiPost('/api/wardrobe/add-manual-url', { name: name, url: urlInp });
       }
-
-    // Успех - переходим в гардероб
-    loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
-  } catch (e) {
-    alert("Ошибка: " + e.message);
-    setBtnLoading(btn, false);
-  }
-};
+      loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
+    } catch (e) {
+        alert("Ошибка: " + e.message);
+    } finally {
+        setBtnLoading(btn, false);
+    }
+  };
 
   // --- PROFILE ---
   function renderProfile() {
@@ -324,31 +313,29 @@
         <div class="profile-id">ID: ${user.id || "Unknown"}</div>
         <div class="stats-row" style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
            <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
-           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">V 3.1</div>
+           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">V 3.2</div>
+        </div>
+      </div>
     `;
   }
 
-  // --- INITIALIZATION (ГЛАВНЫЙ ФИКС) ---
+  // --- INITIALIZATION (ГЛАВНЫЙ ФИКС ЛОГИКИ СТАРТА) ---
   async function startApp() {
     setupPalette();
+    navButtons.forEach(btn => btn.onclick = () => loadSection(btn.dataset.section, btn));
 
-    // Навешиваем обработчики меню
-    navButtons.forEach(btn => {
-      btn.onclick = () => loadSection(btn.dataset.section, btn);
-    });
-
-    // 1. Показываем экран "Просыпаемся"
+    // 1. Показываем загрузку сервера
     content.innerHTML = `
         <div class="card" style="text-align:center; padding: 40px 20px;">
             <div style="font-size:40px; margin-bottom:20px;">☕️</div>
-            <h3>Сервер просыпается...</h3>
-            <p style="color:var(--muted);">Сервер может спать до 50 секунд. Пожалуйста, подождите.</p>
+            <h3>Подключение...</h3>
+            <p style="color:var(--muted);">Связываемся с сервером</p>
         </div>
     `;
 
-    // 2. Ждем ответа от сервера (до 60 секунд)
+    // 2. Ждем Health Check
     let serverReady = false;
-    for(let i=0; i<30; i++) { // 30 попыток по 2 сек
+    for(let i=0; i<30; i++) {
         if(await window.checkBackendHealth()) {
             serverReady = true;
             break;
@@ -359,26 +346,39 @@
     if(!serverReady) {
         content.innerHTML = `
             <div class="card" style="text-align:center;">
-                <h3>Сервер не отвечает 😴</h3>
-                <p>Попробуйте перезагрузить бота позже.</p>
+                <h3>Сервер спит 😴</h3>
+                <p>Перезапустите бота</p>
                 <button class="btn" onclick="location.reload()">Обновить</button>
             </div>`;
         return;
     }
 
-    // 3. Сервер жив! Пробуем авторизоваться (если есть данные Телеграм)
+    // 3. Пытаемся авторизоваться
+    let isAuthenticated = false;
     if (tg && tg.initData) {
       try {
         const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
         if (res && res.access_token) {
           window.setToken(res.access_token);
+          isAuthenticated = true;
         }
       } catch(e) {
          console.warn("Auth failed or already logged in", e);
       }
     }
 
-    // 4. Загружаем гардероб (теперь точно безопасно)
+    // 4. Если токена нет - НЕ ПУСКАЕМ В ГАРДЕРОБ
+    if (!isAuthenticated && !window.getToken()) {
+        content.innerHTML = `
+            <div class="card" style="text-align:center; padding:30px;">
+                <h3>Вход не выполнен 🔐</h3>
+                <p>Не удалось авторизоваться. Перезапустите бота.</p>
+                <button class="btn" onclick="location.reload()">Перезагрузить</button>
+            </div>`;
+        return; // Стоп, дальше не идем!
+    }
+
+    // 5. Все ок — грузим приложение
     const startBtn = document.querySelector('[data-section=wardrobe]');
     loadSection('wardrobe', startBtn);
     setTimeout(() => moveWave(startBtn), 100);
@@ -386,7 +386,3 @@
 
   startApp();
 })();
-
-
-
-
