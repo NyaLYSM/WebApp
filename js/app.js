@@ -1,36 +1,45 @@
-// js/app.js — ROBUST START & ERROR HANDLING
+// js/app.js — FULL VERSION (UI + STABILITY FIXES)
 
 (function() {
+  // 1. Инициализация Telegram WebApp
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   
   try { 
     if(tg) {
       tg.expand(); 
       tg.enableClosingConfirmation();
+      // Устанавливаем цвета хедера под темную тему по умолчанию
       tg.headerColor = '#0b0b12'; 
       tg.backgroundColor = '#0b0b12';
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn("Telegram API not available", e);
+  }
 
+  // Основные элементы
   const content = document.getElementById("content");
   const navButtons = document.querySelectorAll(".menu .btn-nav");
   const wave = document.getElementById("menu-wave");
   let currentTab = 'marketplace'; 
 
-  // --- WAVE ANIMATION ---
+  // --- WAVE ANIMATION (Ваша оригинальная логика) ---
   function moveWave(targetBtn) {
       if(!targetBtn) return;
       const parent = document.getElementById('nav-menu');
+      if (!parent) return;
+      
       const parentRect = parent.getBoundingClientRect();
       const btnRect = targetBtn.getBoundingClientRect();
+      
       const relX = btnRect.left - parentRect.left;
       const relY = btnRect.top - parentRect.top;
+      
       wave.style.width = btnRect.width + 'px';
       wave.style.height = btnRect.height + 'px';
       wave.style.transform = `translate(${relX}px, ${relY}px)`;
   }
 
-  // --- THEMES ---
+  // --- THEMES & PALETTES (Ваша оригинальная логика) ---
   const PALETTES = [
     { name: "Graphite", bg: "#0b0b12", card: "#15151a", accent: "#6c5ce7", accentDark: "#483d8b" },
     { name: "Rose", bg: "#160b0f", card: "#1f1015", accent: "#e84393", accentDark: "#b71569" },
@@ -46,7 +55,6 @@
     r.setProperty('--card-bg', p.card);
     r.setProperty('--accent', p.accent);
     r.setProperty('--accent-dark', p.accentDark);
-    if (window.initWaves) window.initWaves();
   }
 
   function toggleButtonStyle(style) {
@@ -61,64 +69,77 @@
     const closeBtn = document.getElementById("palette-close");
     const autoBtn = document.getElementById("palette-auto");
 
+    // Загрузка сохраненной темы
     const saved = localStorage.getItem('selectedPalette');
     const startP = saved ? PALETTES.find(x => x.name === saved) : PALETTES[0];
     applyPalette(startP || PALETTES[0]);
 
-    paletteBtn.onclick = () => overlay.hidden = false;
-    closeBtn.onclick = () => overlay.hidden = true;
-    overlay.onclick = (e) => { if(e.target === overlay) overlay.hidden = true; };
+    if (paletteBtn) paletteBtn.onclick = () => overlay.hidden = false;
+    if (closeBtn) closeBtn.onclick = () => overlay.hidden = true;
+    if (overlay) overlay.onclick = (e) => { if(e.target === overlay) overlay.hidden = true; };
 
-    grid.innerHTML = PALETTES.map((p, idx) => `
-      <div class="p-item" style="background: linear-gradient(135deg, ${p.accent}, ${p.accentDark});" data-idx="${idx}"></div>
-    `).join('');
+    if (grid) {
+        grid.innerHTML = PALETTES.map((p, idx) => `
+          <div class="p-item" style="background: linear-gradient(135deg, ${p.accent}, ${p.accentDark});" data-idx="${idx}"></div>
+        `).join('');
 
-    grid.querySelectorAll('.p-item').forEach(item => {
-      item.onclick = () => {
-        const idx = +item.dataset.idx;
-        const p = PALETTES[idx];
-        applyPalette(p);
-        localStorage.setItem('selectedPalette', p.name);
-        grid.querySelectorAll('.p-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-      };
-    });
+        grid.querySelectorAll('.p-item').forEach(item => {
+          item.onclick = () => {
+            const idx = +item.dataset.idx;
+            const p = PALETTES[idx];
+            applyPalette(p);
+            localStorage.setItem('selectedPalette', p.name);
+            grid.querySelectorAll('.p-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+          };
+        });
+    }
 
+    // Стиль кнопок
+    const savedStyle = localStorage.getItem('buttonStyle') || 'normal';
+    toggleButtonStyle(savedStyle);
+    
     document.querySelectorAll('.style-btn').forEach(btn => {
+      // Подсветка активной кнопки стиля
+      if(btn.dataset.style === savedStyle) btn.classList.add('active');
+      
       btn.onclick = () => {
         const style = btn.dataset.style;
         toggleButtonStyle(style);
-        document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
+        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
       };
     });
-    toggleButtonStyle(localStorage.getItem('buttonStyle') || 'normal');
+
     if(autoBtn) {
         autoBtn.onclick = () => { applyPalette(PALETTES[0]); overlay.hidden = true; }
     }
   }
 
-  // --- NAVIGATION ---
+  // --- NAVIGATION SYSTEM ---
   async function loadSection(section, btnElement) {
+    // Анимация меню
     if(btnElement) {
         navButtons.forEach(b => b.classList.remove('active'));
         btnElement.classList.add('active');
         moveWave(btnElement);
     }
 
+    // Роутинг
     if (section === 'wardrobe') await renderWardrobe();
     else if (section === 'populate') renderPopulate();
     else if (section === 'looks') {
         content.innerHTML = `
-            <div class="card" style="text-align:center;">
+            <div class="card" style="text-align:center; padding: 40px 20px;">
                 <h3>✨ AI Looks</h3>
                 <p>Нейросеть генерирует образы...</p>
-                <button class="btn" disabled>Скоро</button>
+                <div style="margin-top:20px; font-size:12px; opacity:0.7;">В разработке</div>
             </div>`;
     } 
     else if (section === 'profile') renderProfile();
   }
 
-  // --- ГАРДЕРОБ (С ФИКСОМ items.map) ---
+  // --- RENDER: WARDROBE (С ФИКСОМ items.map) ---
   async function renderWardrobe() {
     content.innerHTML = `<div class="loader">
         <div style="font-size:24px; margin-bottom:10px;">☁️</div>
@@ -128,9 +149,11 @@
     try {
       let items = await window.apiGet('/api/wardrobe/items');
       
-      // ФИКС: Если пришел не массив (null, undefined, ошибка), делаем пустой массив
+      // === CRITICAL FIX ===
+      // Если пришел null, undefined или объект ошибки, подменяем на пустой массив,
+      // чтобы .map() не вызывал краш всего приложения.
       if (!Array.isArray(items)) {
-          console.warn("Данные гардероба некорректны (не массив), сбрасываем.", items);
+          console.warn("API returned non-array for wardrobe:", items);
           items = [];
       }
       
@@ -162,13 +185,13 @@
       content.innerHTML = `
         <div class="card" style="text-align:center; color:#ff5e57;">
             <h3>Ошибка связи</h3>
-            <p style="font-size:11px; margin-bottom:10px;">${e.message}</p>
+            <p style="font-size:11px; margin-bottom:10px;">Не удалось загрузить вещи.</p>
             <button class="btn" onclick="window.renderWardrobe()">Попробовать снова</button>
         </div>`;
     }
   }
 
-  // --- ДОБАВЛЕНИЕ ---
+  // --- RENDER: POPULATE (ADD ITEMS) ---
   function renderPopulate() {
     content.innerHTML = `
       <div class="card">
@@ -176,7 +199,7 @@
           <button class="${currentTab === 'marketplace' ? 'active' : ''}" onclick="window.switchTab('marketplace')">Маркетплейс</button>
           <button class="${currentTab === 'manual' ? 'active' : ''}" onclick="window.switchTab('manual')">Ручное</button>
         </div>
-        <div id="populate-form"></div>
+        <div id="populate-form" style="margin-top: 15px;"></div>
       </div>
     `;
     updatePopulateForm();
@@ -185,37 +208,52 @@
   window.switchTab = (tab) => {
     currentTab = tab;
     const btns = document.querySelectorAll('.mode-switch button');
-    btns[0].classList.toggle('active', tab === 'marketplace');
-    btns[1].classList.toggle('active', tab === 'manual');
+    // Безопасная проверка на существование кнопок
+    if (btns.length >= 2) {
+        btns[0].classList.toggle('active', tab === 'marketplace');
+        btns[1].classList.toggle('active', tab === 'manual');
+    }
     updatePopulateForm();
   };
     
   function updatePopulateForm() {
       const container = document.getElementById("populate-form");
+      if (!container) return;
+
       if (currentTab === 'marketplace') {
         container.innerHTML = `
           <div class="input-wrapper">
-             <input type="text" id="market-name" class="input" placeholder="Название (например: Брюки)">
-          </div>
-          <div class="input-wrapper">
              <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
           </div>
-          <button class="btn" onclick="window.handleAddMarket()">Добавить</button>
+          <div class="input-wrapper" style="margin-top:10px;">
+             <input type="text" id="market-name" class="input" placeholder="Название (необязательно)">
+          </div>
+          <button class="btn" onclick="window.handleAddMarket()" style="margin-top:15px;">Загрузить</button>
+          <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
+            Поддерживает Wildberries, Lamoda и прямые ссылки на фото.
+          </p>
         `;
       } else {
          container.innerHTML = `
            <div class="input-wrapper">
               <input type="text" id="manual-name" class="input" placeholder="Название вещи">
            </div>
-           <div class="input-wrapper file-input">
+           
+           <div class="input-wrapper file-input" style="margin-top:10px;">
               <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
               <span class="file-reset" onclick="window.resetManualFile()">✕</span>
               <label class="gallery-btn">🖼️
                  <input type="file" id="manual-file" hidden accept="image/*">
               </label>
            </div>
-           <button class="btn" onclick="window.handleAddManual()" style="margin-top:10px;">Загрузить</button>
+           
+           <button class="btn" onclick="window.handleAddManual()" style="margin-top:15px;">Загрузить</button>
+           <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
+             Загрузите файл с устройства или вставьте ссылку.
+           </p>
          `;
+         
+         // Привязываем событие input для файла
          const fileInput = container.querySelector('#manual-file');
          if (fileInput) {
             fileInput.onchange = function () { window.handleManualFile(this); };
@@ -223,138 +261,204 @@
       }
   }
 
-  // --- ACTIONS ---
-  function setBtnLoading(btn, isLoading) {
+  // --- ACTIONS & HANDLERS ---
+  
+  // Утилита для состояния кнопки загрузки
+  function setBtnLoading(btnSelector, isLoading) {
+      const btn = document.querySelector(btnSelector);
       if(!btn) return;
+      
       if(isLoading) {
           btn.dataset.oldText = btn.innerText;
-          btn.innerText = "⏳";
+          btn.innerText = "⏳ Обработка...";
           btn.disabled = true;
+          btn.style.opacity = "0.7";
       } else {
           btn.innerText = btn.dataset.oldText || "Готово";
           btn.disabled = false;
+          btn.style.opacity = "1";
       }
   }
 
+  // Удаление вещи
   window.appDelete = async (id) => {
-      if (!confirm("Удалить?")) return;
-      await window.apiDelete('/api/wardrobe/delete', { item_id: id });
-      renderWardrobe();
+      if (!confirm("Удалить эту вещь из гардероба?")) return;
+      
+      const success = await window.apiDelete('/api/wardrobe/delete', { item_id: id });
+      if (success) {
+          renderWardrobe();
+      } else {
+          alert("Не удалось удалить. Попробуйте еще раз.");
+      }
   };
 
+  // Обработка выбора файла (визуальная часть)
   window.handleManualFile = (input) => {
     const file = input.files && input.files[0];
     if (!file) return;
+    
     const textInput = document.getElementById('manual-img-url');
     const wrapper = textInput.closest('.file-input');
-    textInput.value = file.name;
-    textInput.readOnly = true;
+    
+    textInput.value = file.name; // Показываем имя файла
+    textInput.readOnly = true;   // Блокируем ручной ввод ссылки
     wrapper.classList.add('has-file');
   };
 
+  // Сброс файла
   window.resetManualFile = () => {
     const fileInput = document.getElementById('manual-file');
     const textInput = document.getElementById('manual-img-url');
     const wrapper = textInput.closest('.file-input');
+    
     fileInput.value = '';
     textInput.value = '';
     textInput.readOnly = false;
     wrapper.classList.remove('has-file');
   };
 
+  // Добавление: Маркетплейс
   window.handleAddMarket = async () => {
     const url = document.getElementById("market-url").value;
     const name = document.getElementById("market-name").value;
-    if (!url) return alert("Введите ссылку");
-    const btn = document.querySelector("#populate-form .btn");
-    setBtnLoading(btn, true);
+    
+    if (!url) return alert("Пожалуйста, введите ссылку.");
+
+    setBtnLoading("#populate-form .btn", true);
+
     try {
-      await window.apiPost('/api/wardrobe/add-marketplace', { url, name: name || "Покупка" });
-      alert("Добавлено!");
-      document.getElementById("market-url").value = "";
-    } catch (e) { alert(e.message); }
-    finally { setBtnLoading(btn, false); }
+      const res = await window.apiPost('/api/wardrobe/add-marketplace', { 
+          url: url, 
+          name: name || "" 
+      });
+      
+      if (res) {
+          alert("Вещь успешно добавлена!");
+          // Переход в гардероб
+          document.querySelector('[data-section=wardrobe]').click();
+      } else {
+          throw new Error("Пустой ответ от сервера");
+      }
+    } catch (e) { 
+        alert("Ошибка при добавлении: " + e.message); 
+    } finally { 
+        setBtnLoading("#populate-form .btn", false); 
+    }
   };
 
+  // Добавление: Ручное (Файл или URL)
   window.handleAddManual = async () => {
     const name = document.getElementById("manual-name").value;
     const fileInp = document.getElementById("manual-file");
     const urlInp = document.getElementById("manual-img-url").value;
 
     if (!name) return alert("Введите название вещи");
-    if (!fileInp.files[0] && !urlInp) return alert("Добавьте фото (файл или ссылку)");
+    if ((!fileInp.files || !fileInp.files[0]) && !urlInp) {
+        return alert("Добавьте фото (файл или ссылку)");
+    }
 
-    const btn = document.querySelector("#populate-form .btn");
-    setBtnLoading(btn, true);
+    setBtnLoading("#populate-form .btn", true);
 
     try {
-      if (fileInp.files[0]) {
+      // Сценарий 1: Загрузка файла
+      if (fileInp.files && fileInp.files[0]) {
         const formData = new FormData();
         formData.append("name", name);
         formData.append("file", fileInp.files[0]);
         await window.apiUpload('/api/wardrobe/add-file', formData);
-      } else if (urlInp) {
+      } 
+      // Сценарий 2: Загрузка ссылки
+      else if (urlInp) {
         await window.apiPost('/api/wardrobe/add-manual-url', { name: name, url: urlInp });
       }
-      loadSection('wardrobe', document.querySelector('[data-section=wardrobe]'));
+      
+      alert("Вещь добавлена!");
+      document.querySelector('[data-section=wardrobe]').click();
+      
     } catch (e) {
         alert("Ошибка: " + e.message);
     } finally {
-        setBtnLoading(btn, false);
+        setBtnLoading("#populate-form .btn", false);
     }
   };
 
-  // --- PROFILE ---
+  // --- RENDER: PROFILE ---
   function renderProfile() {
     const user = tg?.initDataUnsafe?.user || {};
     content.innerHTML = `
-      <div class="card profile-card">
-        <div class="profile-name">${user.first_name || "Гость"}</div>
-        <div class="profile-id">ID: ${user.id || "Unknown"}</div>
-        <div class="stats-row" style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
-           <div class="stat-box" style="background:#000; padding:8px 16px; border-radius:8px; font-size:12px;">V 3.2</div>
+      <div class="card profile-card" style="text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+        <div class="profile-name" style="font-size: 18px; font-weight: bold;">${user.first_name || "Гость"}</div>
+        <div class="profile-id" style="color: var(--muted); font-size: 12px; margin-bottom: 20px;">ID: ${user.id || "Unknown"}</div>
+        
+        <div class="stats-row" style="display:flex; gap:10px; justify-content:center;">
+           <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
+           <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">V 3.3</div>
         </div>
+        
+        <button class="btn" onclick="location.reload()" style="background: var(--card-bg); border: 1px solid var(--muted); margin-top: 30px;">
+            Обновить приложение
+        </button>
       </div>
     `;
   }
 
-  // --- INITIALIZATION (ГЛАВНЫЙ ФИКС ЛОГИКИ СТАРТА) ---
+  // --- INITIALIZATION (ЗАПУСК С ЗАЩИТОЙ) ---
   async function startApp() {
     setupPalette();
+    
+    // Навешиваем обработчики меню
     navButtons.forEach(btn => btn.onclick = () => loadSection(btn.dataset.section, btn));
 
-    // 1. Показываем загрузку сервера
+    // 1. Экран подключения
     content.innerHTML = `
         <div class="card" style="text-align:center; padding: 40px 20px;">
-            <div style="font-size:40px; margin-bottom:20px;">☕️</div>
-            <h3>Подключение...</h3>
-            <p style="color:var(--muted);">Связываемся с сервером</p>
+            <div style="font-size:40px; margin-bottom:20px;">📡</div>
+            <h3>Подключение</h3>
+            <p id="conn-log" style="color:var(--muted); font-size:12px; margin-top:10px;">
+                Связываемся с сервером...
+            </p>
         </div>
     `;
 
-    // 2. Ждем Health Check
+    // 2. ЦИКЛ ПРОВЕРКИ СЕРВЕРА (Максимум 20 попыток по 2 секунды)
     let serverReady = false;
-    for(let i=0; i<30; i++) {
-        if(await window.checkBackendHealth()) {
+    const maxRetries = 20;
+    
+    for(let i = 1; i <= maxRetries; i++) {
+        // Обновляем статус на экране
+        const statusEl = document.getElementById('conn-log');
+        if(statusEl) statusEl.innerText = `Попытка ${i}/${maxRetries}...`;
+        
+        // Проверяем здоровье (функция из api.js)
+        const isHealthy = await window.checkBackendHealth();
+        
+        if(isHealthy) {
             serverReady = true;
-            break;
+            break; 
         }
+        
+        // Ждем 2 секунды перед следующей попыткой
         await new Promise(r => setTimeout(r, 2000));
     }
 
+    // Если сервер так и не ответил
     if(!serverReady) {
         content.innerHTML = `
             <div class="card" style="text-align:center;">
-                <h3>Сервер спит 😴</h3>
-                <p>Перезапустите бота</p>
-                <button class="btn" onclick="location.reload()">Обновить</button>
+                <h3 style="color:#ff7675">Сервер недоступен</h3>
+                <p>Не удалось подключиться. Возможно, сервер "спит" или обновляется.</p>
+                <button class="btn" onclick="location.reload()" style="margin-top:20px;">
+                    Попробовать снова
+                </button>
             </div>`;
         return;
     }
 
-    // 3. Пытаемся авторизоваться
+    // 3. АВТОРИЗАЦИЯ (Только если сервер жив)
     let isAuthenticated = false;
+    
+    // Если есть данные от Телеграма, пробуем залогиниться
     if (tg && tg.initData) {
       try {
         const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
@@ -363,26 +467,35 @@
           isAuthenticated = true;
         }
       } catch(e) {
-         console.warn("Auth failed or already logged in", e);
+         console.warn("Auth check failed:", e);
       }
     }
+    
+    // Проверка сохраненного токена, если новый логин не прошел
+    if (!isAuthenticated && window.getToken()) {
+        isAuthenticated = true; 
+    }
 
-    // 4. Если токена нет - НЕ ПУСКАЕМ В ГАРДЕРОБ
-    if (!isAuthenticated && !window.getToken()) {
+    // 4. Если не авторизовались
+    if (!isAuthenticated) {
         content.innerHTML = `
             <div class="card" style="text-align:center; padding:30px;">
                 <h3>Вход не выполнен 🔐</h3>
-                <p>Не удалось авторизоваться. Перезапустите бота.</p>
+                <p>Сессия истекла. Пожалуйста, перезапустите бота.</p>
                 <button class="btn" onclick="location.reload()">Перезагрузить</button>
             </div>`;
-        return; // Стоп, дальше не идем!
+        return; 
     }
 
-    // 5. Все ок — грузим приложение
+    // 5. УСПЕШНЫЙ ЗАПУСК
     const startBtn = document.querySelector('[data-section=wardrobe]');
-    loadSection('wardrobe', startBtn);
-    setTimeout(() => moveWave(startBtn), 100);
+    if (startBtn) {
+        loadSection('wardrobe', startBtn);
+        // Небольшая задержка для корректного расчета позиции волны
+        setTimeout(() => moveWave(startBtn), 150);
+    }
   }
 
+  // Запуск приложения
   startApp();
 })();
