@@ -1,13 +1,16 @@
-// js/api.js — FIXED NETWORK HANDLING, AUTH & CRASH PROTECTION
+// js/api.js
 (function () {
-  if (!window.BACKEND_URL || window.BACKEND_URL === "{{ BACKEND_URL }}") {
+  // Настройка URL (заменится автоматически или останется дефолтным)
+  if (!window.BACKEND_URL || window.BACKEND_URL.includes("{{")) {
     window.BACKEND_URL = "https://stylist-backend-h5jl.onrender.com";
   }
 
+  // --- TOKEN MANAGEMENT ---
   window.getToken = () => localStorage.getItem("access_token");
   window.setToken = (t) => localStorage.setItem("access_token", t);
   window.clearToken = () => localStorage.removeItem("access_token");
 
+  // --- HEADERS ---
   function getHeaders(json = true) {
     const h = {};
     const token = window.getToken();
@@ -20,96 +23,71 @@
     return h;
   }
 
-  // Улучшенная обработка ошибок
-  async function handleApiError(res) {
-    if (res.status === 401) {
-      console.warn("401 Unauthorized. Токен устарел.");
-      window.clearToken();
-      throw new Error("UNAUTHORIZED"); // Специальная ошибка для отлова
-    }
-    if (!res.ok) {
-      let msg = res.statusText;
-      try { msg = await res.text(); } catch(e){}
-      throw new Error(`Ошибка ${res.status}: ${msg}`);
-    }
-  }
-
-  // Fetch с timeout
-  async function fetchWithTimeout(url, options = {}, timeout = 30000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('Превышено время ожидания. Попробуйте еще раз.');
-      }
-      throw error;
-    }
-  }
-
-  // Глобальная функция проверки статуса сервера
+  // --- HEALTH CHECK (Критически важно для старта) ---
   window.checkBackendHealth = async () => {
     try {
-      const res = await fetchWithTimeout(window.BACKEND_URL + "/health", { method: 'GET' }, 5000);
+      const controller = new AbortController();
+      // Ждем всего 2 секунды. Если сервер тупит — считаем, что он не готов.
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const res = await fetch(window.BACKEND_URL + "/health", { 
+        method: 'GET',
+        signal: controller.signal,
+        cache: "no-store"
+      });
+      
+      clearTimeout(timeoutId);
       return res.ok;
     } catch (e) {
       return false;
     }
   };
 
-  // Обертка для fetch с обработкой ошибок
+  // --- BASE FETCH WRAPPER ---
   async function safeFetch(url, options, timeout = 30000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    
     try {
-      const res = await fetchWithTimeout(url, options, timeout);
-      await handleApiError(res);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+
+      if (res.status === 401) {
+        window.clearToken();
+        throw new Error("UNAUTHORIZED");
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
       return res;
     } catch (e) {
-      if (e.message === "UNAUTHORIZED") throw e; // Пробрасываем 401 выше
-      console.error("Fetch error:", e);
+      clearTimeout(id);
       throw e;
     }
   }
 
-  // --- МЕТОДЫ API ---
-  
-  window.apiGet = async (path, params = {}) => {
+  // --- API METHODS ---
+  window.apiGet = async (path) => {
     try {
-      const qs = new URLSearchParams(params).toString();
-      const res = await safeFetch(
-        window.BACKEND_URL + path + (qs ? "?" + qs : ""), 
-        { headers: getHeaders(false) },
-        15000
-      );
+      const res = await safeFetch(window.BACKEND_URL + path, { headers: getHeaders(false) }, 10000);
       return await res.json();
     } catch (e) {
-      // ГЛАВНЫЙ ФИКС: Если ошибка, возвращаем пустой массив, а не падаем
-      console.warn("apiGet failed, returning empty array:", e);
-      return []; 
+      console.warn("GET failed:", path, e);
+      return []; // Возвращаем пустой массив, чтобы не крашить map() в app.js
     }
   };
 
-  window.apiPost = async (path, payload = {}) => {
+  window.apiPost = async (path, payload) => {
     try {
-      const res = await safeFetch(
-        window.BACKEND_URL + path,
-        {
-          method: "POST",
-          headers: getHeaders(true),
-          body: JSON.stringify(payload)
-        },
-        45000
-      );
+      const res = await safeFetch(window.BACKEND_URL + path, {
+        method: "POST",
+        headers: getHeaders(true),
+        body: JSON.stringify(payload)
+      }, 45000); // Длинный тайм-аут для загрузки с маркетплейсов
       return await res.json();
     } catch (e) {
-      if (e.message === "UNAUTHORIZED") return null;
+      if(e.message === "UNAUTHORIZED") return null;
       throw e;
     }
   };
@@ -117,38 +95,25 @@
   window.apiDelete = async (path, params = {}) => {
     try {
       const qs = new URLSearchParams(params).toString();
-      const res = await safeFetch(
-        window.BACKEND_URL + path + (qs ? "?" + qs : ""),
-        {
-          method: "DELETE",
-          headers: getHeaders(false)
-        },
-        15000
-      );
-      return await res.json();
-    } catch (e) { return null; }
+      await safeFetch(window.BACKEND_URL + path + "?" + qs, {
+        method: "DELETE",
+        headers: getHeaders(false)
+      }, 10000);
+      return true;
+    } catch (e) { return false; }
   };
 
   window.apiUpload = async (path, formData) => {
-    // ВАЖНО: apiUpload должен сам обрабатывать try/catch или пробрасывать, 
-    // но лучше вернуть null при ошибке, чтобы UI не завис
-    try {
-        const token = window.getToken();
-        const headers = {};
-        if (token && token !== "null") headers["Authorization"] = `Bearer ${token}`;
-      
-        const res = await safeFetch(
-          window.BACKEND_URL + path,
-          {
-            method: "POST",
-            headers: headers,
-            body: formData
-          },
-          60000
-        );
-        return await res.json();
-    } catch (e) {
-        throw e; // Upload пусть падает, чтобы мы показали alert пользователю
-    }
+    // Для загрузки файлов заголовки собираем вручную без Content-Type (браузер сам поставит boundary)
+    const token = window.getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await safeFetch(window.BACKEND_URL + path, {
+        method: "POST",
+        headers: headers,
+        body: formData
+    }, 60000);
+    return await res.json();
   };
 })();
