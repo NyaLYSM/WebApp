@@ -395,11 +395,6 @@
            <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
            <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">V 3.3</div>
         </div>
-        
-        <button class="btn" onclick="location.reload()" style="background: var(--card-bg); border: 1px solid var(--muted); margin-top: 30px;">
-            Обновить приложение
-        </button>
-      </div>
     `;
   }
 
@@ -499,3 +494,4 @@
   // Запуск приложения
   startApp();
 })();
+
