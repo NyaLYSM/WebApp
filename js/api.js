@@ -116,4 +116,41 @@
     }, 60000);
     return await res.json();
   };
+
+/**
+   * Добавление товара с маркетплейса с генерацией вариантов
+   * Возвращает temp_id и превью вариантов
+   */
+  window.apiAddMarketplaceWithVariants = async (url, name = "") => {
+    try {
+      const res = await safeFetch(window.BACKEND_URL + '/api/wardrobe/add-marketplace-with-variants', {
+        method: "POST",
+        headers: getHeaders(true),
+        body: JSON.stringify({ url, name })
+      }, 60000); // 60 секунд на обработку
+      return await res.json();
+    } catch (e) {
+      if(e.message === "UNAUTHORIZED") return null;
+      throw e;
+    }
+  };
+
+  /**
+   * Сохранение выбранного варианта
+   */
+  window.apiSelectVariant = async (temp_id, selected_variant, name) => {
+    try {
+      const res = await safeFetch(window.BACKEND_URL + '/api/wardrobe/select-variant', {
+        method: "POST",
+        headers: getHeaders(true),
+        body: JSON.stringify({ temp_id, selected_variant, name })
+      }, 15000);
+      return await res.json();
+    } catch (e) {
+      if(e.message === "UNAUTHORIZED") return null;
+      throw e;
+    }
+  };
+  
 })();
+
