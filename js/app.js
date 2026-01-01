@@ -205,293 +205,450 @@
     updatePopulateForm();
   }
 
-  window.switchTab = (tab) => {
-    currentTab = tab;
-    const btns = document.querySelectorAll('.mode-switch button');
-    // Безопасная проверка на существование кнопок
-    if (btns.length >= 2) {
-        btns[0].classList.toggle('active', tab === 'marketplace');
-        btns[1].classList.toggle('active', tab === 'manual');
-    }
-    updatePopulateForm();
-  };
-    
-  function updatePopulateForm() {
-      const container = document.getElementById("populate-form");
-      if (!container) return;
-
-      if (currentTab === 'marketplace') {
-        container.innerHTML = `
-          <div class="input-wrapper">
-             <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
-          </div>
-          <div class="input-wrapper" style="margin-top:10px;">
-             <input type="text" id="market-name" class="input" placeholder="Название (необязательно)">
-          </div>
-          <button class="btn" onclick="window.handleAddMarket()" style="margin-top:15px;">Загрузить</button>
-          <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
-            Поддерживает Wildberries, Lamoda и прямые ссылки на фото.
-          </p>
-        `;
-      } else {
-         container.innerHTML = `
-           <div class="input-wrapper">
-              <input type="text" id="manual-name" class="input" placeholder="Название вещи">
-           </div>
-           
-           <div class="input-wrapper file-input" style="margin-top:10px;">
-              <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
-              <span class="file-reset" onclick="window.resetManualFile()">✕</span>
-              <label class="gallery-btn">🖼️
-                 <input type="file" id="manual-file" hidden accept="image/*">
-              </label>
-           </div>
-           
-           <button class="btn" onclick="window.handleAddManual()" style="margin-top:15px;">Загрузить</button>
-           <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
-             Загрузите файл с устройства или вставьте ссылку.
-           </p>
-         `;
-         
-         // Привязываем событие input для файла
-         const fileInput = container.querySelector('#manual-file');
-         if (fileInput) {
-            fileInput.onchange = function () { window.handleManualFile(this); };
-         }
-      }
-  }
-
-  // --- ACTIONS & HANDLERS ---
+/**
+ * Показывает UI для выбора варианта изображения
+ * @param {Object} data - {temp_id, suggested_name, variants: {original, smart_crop, tight_crop, enhanced}}
+ */
+  function showVariantSelector(data) {
+    const { temp_id, suggested_name, variants } = data;
   
-  // Утилита для состояния кнопки загрузки
-  function setBtnLoading(btnSelector, isLoading) {
-      const btn = document.querySelector(btnSelector);
-      if(!btn) return;
-      
-      if(isLoading) {
-          btn.dataset.oldText = btn.innerText;
-          btn.innerText = "⏳ Обработка...";
-          btn.disabled = true;
-          btn.style.opacity = "0.7";
-      } else {
-          btn.innerText = btn.dataset.oldText || "Готово";
-          btn.disabled = false;
-          btn.style.opacity = "1";
+    // Названия и описания вариантов
+    const variantInfo = {
+      original: {
+         title: "🎯 Оригинал",
+        desc: "Центральный кроп изображения"
+      },
+      smart_crop: {
+        title: "🧠 Умный кроп",
+        desc: "Фокус на главном объекте"
+      },
+      tight_crop: {
+        title: "✂️ Плотный кроп",
+        desc: "Максимально близко к одежде"
+      },
+      enhanced: {
+        title: "✨ Улучшенный",
+        desc: "С повышением качества"
       }
+    };
+
+    // Создаём HTML для селектора
+    const variantCards = Object.entries(variants).map(([key, imageUrl]) => {
+      const info = variantInfo[key] || { title: key, desc: "" };
+      return `
+        <div class="variant-card" data-variant="${key}">
+          <div class="variant-image">
+            <img src="${window.BACKEND_URL}${imageUrl}" alt="${info.title}" loading="lazy">
+            <div class="variant-check">✓</div>
+          </div>
+          <div class="variant-info">
+            <div class="variant-title">${info.title}</div>
+            <div class="variant-desc">${info.desc}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    content.innerHTML = `
+      <div class="variant-selector-container">
+        <div class="variant-header">
+          <h2>Выберите лучший вариант</h2>
+          <p class="variant-subtitle">Мы подготовили 4 варианта обработки изображения</p>
+        </div>
+
+        <div class="variant-name-input">
+          <label>Название:</label>
+          <input 
+            type="text" 
+            id="variant-name" 
+            class="input" 
+            value="${suggested_name || ''}" 
+            placeholder="Введите название..."
+            maxlength="100"
+          >
+        </div>
+
+        <div class="variant-grid">
+          ${variantCards}
+        </div>
+
+        <div class="variant-actions">
+          <button class="btn btn-secondary" onclick="window.cancelVariantSelection()">
+            Отмена
+          </button>
+          <button class="btn btn-primary" id="save-variant-btn">
+            Сохранить
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Логика выбора варианта
+    let selectedVariant = 'original'; // По умолчанию первый
+  
+    const variantCards_nodes = document.querySelectorAll('.variant-card');
+    variantCards_nodes.forEach(card => {
+      card.addEventListener('click', () => {
+        // Убираем активный класс со всех
+        variantCards_nodes.forEach(c => c.classList.remove('active'));
+        // Добавляем текущему
+        card.classList.add('active');
+        selectedVariant = card.dataset.variant;
+      });
+    });
+
+    // Устанавливаем первый вариант активным
+    if (variantCards_nodes.length > 0) {
+      variantCards_nodes[0].classList.add('active');
+    }
+
+    // Обработчик сохранения
+    document.getElementById('save-variant-btn').onclick = async () => {
+      const nameInput = document.getElementById('variant-name');
+      const finalName = nameInput.value.trim();
+
+      if (!finalName) {
+        alert("Введите название вещи");
+        nameInput.focus();
+        return;
+      }
+
+      // Блокируем кнопку
+      const btn = document.getElementById('save-variant-btn');
+      btn.disabled = true;
+      btn.innerText = "⏳ Сохранение...";
+
+      try {
+        const result = await window.apiSelectVariant(temp_id, selectedVariant, finalName);
+      
+        if (result) {
+          alert("✅ Вещь успешно добавлена!");
+          // Переходим в гардероб
+          document.querySelector('[data-section=wardrobe]').click();
+        } else {
+          throw new Error("Пустой ответ от сервера");
+        }
+      } catch (e) {
+        alert("❌ Ошибка при сохранении: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "Сохранить";
+      }
+    };
   }
 
-  // Удаление вещи
-  window.appDelete = async (id) => {
-      if (!confirm("Удалить эту вещь из гардероба?")) return;
-      
-      const success = await window.apiDelete('/api/wardrobe/delete', { item_id: id });
-      if (success) {
-          renderWardrobe();
-      } else {
-          alert("Не удалось удалить. Попробуйте еще раз.");
+  // Функция отмены выбора
+  window.cancelVariantSelection = () => {
+    if (confirm("Отменить добавление вещи?")) {
+      renderPopulate(); // Возвращаемся к форме добавления
+    }
+  };
+  
+    window.switchTab = (tab) => {
+      currentTab = tab;
+      const btns = document.querySelectorAll('.mode-switch button');
+      // Безопасная проверка на существование кнопок
+      if (btns.length >= 2) {
+          btns[0].classList.toggle('active', tab === 'marketplace');
+          btns[1].classList.toggle('active', tab === 'manual');
       }
-  };
-
-  // Обработка выбора файла (визуальная часть)
-  window.handleManualFile = (input) => {
-    const file = input.files && input.files[0];
-    if (!file) return;
+      updatePopulateForm();
+    };
     
-    const textInput = document.getElementById('manual-img-url');
-    const wrapper = textInput.closest('.file-input');
-    
-    textInput.value = file.name; // Показываем имя файла
-    textInput.readOnly = true;   // Блокируем ручной ввод ссылки
-    wrapper.classList.add('has-file');
-  };
+    function updatePopulateForm() {
+        const container = document.getElementById("populate-form");
+        if (!container) return;
 
-  // Сброс файла
-  window.resetManualFile = () => {
-    const fileInput = document.getElementById('manual-file');
-    const textInput = document.getElementById('manual-img-url');
-    const wrapper = textInput.closest('.file-input');
-    
-    fileInput.value = '';
-    textInput.value = '';
-    textInput.readOnly = false;
-    wrapper.classList.remove('has-file');
-  };
+        if (currentTab === 'marketplace') {
+          container.innerHTML = `
+            <div class="input-wrapper">
+               <input type="text" id="market-url" class="input" placeholder="Ссылка на товар (WB/Ozon)">
+            </div>
+            <div class="input-wrapper" style="margin-top:10px;">
+               <input type="text" id="market-name" class="input" placeholder="Название (необязательно)">
+            </div>
+            <button class="btn" onclick="window.handleAddMarket()" style="margin-top:15px;">Загрузить</button>
+            <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
+              Поддерживает Wildberries, Lamoda и прямые ссылки на фото.
+            </p>
+          `;
+        } else {
+           container.innerHTML = `
+             <div class="input-wrapper">
+                <input type="text" id="manual-name" class="input" placeholder="Название вещи">
+             </div>
+           
+             <div class="input-wrapper file-input" style="margin-top:10px;">
+                <input type="text" id="manual-img-url" class="input" placeholder="Ссылка на картинку">
+                <span class="file-reset" onclick="window.resetManualFile()">✕</span>
+                <label class="gallery-btn">🖼️
+                   <input type="file" id="manual-file" hidden accept="image/*">
+                </label>
+             </div>
+           
+             <button class="btn" onclick="window.handleAddManual()" style="margin-top:15px;">Загрузить</button>
+             <p style="font-size:10px; color:var(--muted); margin-top:10px; text-align:center;">
+               Загрузите файл с устройства или вставьте ссылку.
+             </p>
+           `;
+         
+           // Привязываем событие input для файла
+           const fileInput = container.querySelector('#manual-file');
+           if (fileInput) {
+              fileInput.onchange = function () { window.handleManualFile(this); };
+           }
+        }
+    }
 
-  // Добавление: Маркетплейс
+    // --- ACTIONS & HANDLERS ---
+  
+    // Утилита для состояния кнопки загрузки
+    function setBtnLoading(btnSelector, isLoading) {
+        const btn = document.querySelector(btnSelector);
+        if(!btn) return;
+      
+        if(isLoading) {
+            btn.dataset.oldText = btn.innerText;
+            btn.innerText = "⏳ Обработка...";
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+        } else {
+            btn.innerText = btn.dataset.oldText || "Готово";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        }
+    }
+
+    // Удаление вещи
+    window.appDelete = async (id) => {
+        if (!confirm("Удалить эту вещь из гардероба?")) return;
+      
+        const success = await window.apiDelete('/api/wardrobe/delete', { item_id: id });
+        if (success) {
+            renderWardrobe();
+        } else {
+            alert("Не удалось удалить. Попробуйте еще раз.");
+        }
+    };
+
+    // Обработка выбора файла (визуальная часть)
+    window.handleManualFile = (input) => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+    
+      const textInput = document.getElementById('manual-img-url');
+      const wrapper = textInput.closest('.file-input');
+    
+      textInput.value = file.name; // Показываем имя файла
+      textInput.readOnly = true;   // Блокируем ручной ввод ссылки
+      wrapper.classList.add('has-file');
+    };
+
+    // Сброс файла
+    // ЗАМЕНИТЬ существующую функцию window.handleAddMarket в app.js на эту:
+
   window.handleAddMarket = async () => {
     const url = document.getElementById("market-url").value;
     const name = document.getElementById("market-name").value;
-    
+  
     if (!url) return alert("Пожалуйста, введите ссылку.");
 
     setBtnLoading("#populate-form .btn", true);
 
     try {
-      const res = await window.apiPost('/api/wardrobe/add-marketplace', { 
-          url: url, 
-          name: name || "" 
-      });
-      
-      if (res) {
-          alert("Вещь успешно добавлена!");
-          // Переход в гардероб
-          document.querySelector('[data-section=wardrobe]').click();
+      // 🆕 НОВЫЙ ЭНДПОИНТ: генерирует варианты
+      const res = await window.apiAddMarketplaceWithVariants(url, name || "");
+    
+      if (res && res.temp_id) {
+        // Показываем селектор вариантов
+        showVariantSelector(res);
       } else {
-          throw new Error("Пустой ответ от сервера");
+        throw new Error("Не удалось обработать изображение");
       }
+    
     } catch (e) { 
-        alert("Ошибка при добавлении: " + e.message); 
+      alert("Ошибка при добавлении: " + e.message); 
+      setBtnLoading("#populate-form .btn", false);
     } finally { 
-        setBtnLoading("#populate-form .btn", false); 
+      // НЕ сбрасываем загрузку здесь, так как переходим на другой экран
     }
   };
 
-  // Добавление: Ручное (Файл или URL)
-  window.handleAddManual = async () => {
-    const name = document.getElementById("manual-name").value;
-    const fileInp = document.getElementById("manual-file");
-    const urlInp = document.getElementById("manual-img-url").value;
-
-    if (!name) return alert("Введите название вещи");
-    if ((!fileInp.files || !fileInp.files[0]) && !urlInp) {
-        return alert("Добавьте фото (файл или ссылку)");
-    }
-
-    setBtnLoading("#populate-form .btn", true);
-
-    try {
-      // Сценарий 1: Загрузка файла
-      if (fileInp.files && fileInp.files[0]) {
-        const formData = new FormData();
-        formData.append("name", name);
-        formData.append("file", fileInp.files[0]);
-        await window.apiUpload('/api/wardrobe/add-file', formData);
-      } 
-      // Сценарий 2: Загрузка ссылки
-      else if (urlInp) {
-        await window.apiPost('/api/wardrobe/add-manual-url', { name: name, url: urlInp });
-      }
-      
-      alert("Вещь добавлена!");
-      document.querySelector('[data-section=wardrobe]').click();
-      
-    } catch (e) {
-        alert("Ошибка: " + e.message);
-    } finally {
-        setBtnLoading("#populate-form .btn", false);
-    }
-  };
-
-  // --- RENDER: PROFILE ---
-  function renderProfile() {
-    const user = tg?.initDataUnsafe?.user || {};
-    content.innerHTML = `
-      <div class="card profile-card" style="text-align: center;">
-        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
-        <div class="profile-name" style="font-size: 18px; font-weight: bold;">${user.first_name || "Гость"}</div>
-        <div class="profile-id" style="color: var(--muted); font-size: 12px; margin-bottom: 20px;">ID: ${user.id || "Unknown"}</div>
-        
-        <div class="stats-row" style="display:flex; gap:10px; justify-content:center;">
-           <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
-           <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">V 3.3</div>
-        </div>
-    `;
-  }
-
-  // --- INITIALIZATION (ЗАПУСК С ЗАЩИТОЙ) ---
-  async function startApp() {
-    setupPalette();
+    // Добавление: Маркетплейс
+    window.handleAddMarket = async () => {
+      const url = document.getElementById("market-url").value;
+      const name = document.getElementById("market-name").value;
     
-    // Навешиваем обработчики меню
-    navButtons.forEach(btn => btn.onclick = () => loadSection(btn.dataset.section, btn));
+      if (!url) return alert("Пожалуйста, введите ссылку.");
 
-    // 1. Экран подключения
-    content.innerHTML = `
-        <div class="card" style="text-align:center; padding: 40px 20px;">
-            <div style="font-size:40px; margin-bottom:20px;">📡</div>
-            <h3>Подключение</h3>
-            <p id="conn-log" style="color:var(--muted); font-size:12px; margin-top:10px;">
-                Связываемся с сервером...
-            </p>
-        </div>
-    `;
+      setBtnLoading("#populate-form .btn", true);
 
-    // 2. ЦИКЛ ПРОВЕРКИ СЕРВЕРА (Максимум 20 попыток по 2 секунды)
-    let serverReady = false;
-    const maxRetries = 20;
-    
-    for(let i = 1; i <= maxRetries; i++) {
-        // Обновляем статус на экране
-        const statusEl = document.getElementById('conn-log');
-        if(statusEl) statusEl.innerText = `Попытка ${i}/${maxRetries}...`;
-        
-        // Проверяем здоровье (функция из api.js)
-        const isHealthy = await window.checkBackendHealth();
-        
-        if(isHealthy) {
-            serverReady = true;
-            break; 
-        }
-        
-        // Ждем 2 секунды перед следующей попыткой
-        await new Promise(r => setTimeout(r, 2000));
-    }
-
-    // Если сервер так и не ответил
-    if(!serverReady) {
-        content.innerHTML = `
-            <div class="card" style="text-align:center;">
-                <h3 style="color:#ff7675">Сервер недоступен</h3>
-                <p>Не удалось подключиться. Возможно, сервер "спит" или обновляется.</p>
-                <button class="btn" onclick="location.reload()" style="margin-top:20px;">
-                    Попробовать снова
-                </button>
-            </div>`;
-        return;
-    }
-
-    // 3. АВТОРИЗАЦИЯ (Только если сервер жив)
-    let isAuthenticated = false;
-    
-    // Если есть данные от Телеграма, пробуем залогиниться
-    if (tg && tg.initData) {
       try {
-        const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
-        if (res && res.access_token) {
-          window.setToken(res.access_token);
-          isAuthenticated = true;
+        const res = await window.apiPost('/api/wardrobe/add-marketplace', { 
+            url: url, 
+            name: name || "" 
+        });
+      
+        if (res) {
+            alert("Вещь успешно добавлена!");
+            // Переход в гардероб
+            document.querySelector('[data-section=wardrobe]').click();
+        } else {
+            throw new Error("Пустой ответ от сервера");
         }
-      } catch(e) {
-         console.warn("Auth check failed:", e);
+      } catch (e) { 
+          alert("Ошибка при добавлении: " + e.message); 
+      } finally { 
+          setBtnLoading("#populate-form .btn", false); 
+      }
+    };
+
+    // Добавление: Ручное (Файл или URL)
+    window.handleAddManual = async () => {
+      const name = document.getElementById("manual-name").value;
+      const fileInp = document.getElementById("manual-file");
+      const urlInp = document.getElementById("manual-img-url").value;
+
+      if (!name) return alert("Введите название вещи");
+      if ((!fileInp.files || !fileInp.files[0]) && !urlInp) {
+          return alert("Добавьте фото (файл или ссылку)");
+      }
+
+      setBtnLoading("#populate-form .btn", true);
+
+      try {
+        // Сценарий 1: Загрузка файла
+        if (fileInp.files && fileInp.files[0]) {
+          const formData = new FormData();
+          formData.append("name", name);
+          formData.append("file", fileInp.files[0]);
+          await window.apiUpload('/api/wardrobe/add-file', formData);
+        } 
+        // Сценарий 2: Загрузка ссылки
+        else if (urlInp) {
+          await window.apiPost('/api/wardrobe/add-manual-url', { name: name, url: urlInp });
+        }
+      
+        alert("Вещь добавлена!");
+        document.querySelector('[data-section=wardrobe]').click();
+      
+      } catch (e) {
+          alert("Ошибка: " + e.message);
+      } finally {
+          setBtnLoading("#populate-form .btn", false);
+      }
+    };
+
+    // --- RENDER: PROFILE ---
+    function renderProfile() {
+      const user = tg?.initDataUnsafe?.user || {};
+      content.innerHTML = `
+        <div class="card profile-card" style="text-align: center;">
+          <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+          <div class="profile-name" style="font-size: 18px; font-weight: bold;">${user.first_name || "Гость"}</div>
+          <div class="profile-id" style="color: var(--muted); font-size: 12px; margin-bottom: 20px;">ID: ${user.id || "Unknown"}</div>
+        
+          <div class="stats-row" style="display:flex; gap:10px; justify-content:center;">
+             <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">PRO STATUS</div>
+             <div class="stat-box" style="background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:8px; font-size:12px;">V 3.3</div>
+          </div>
+      `;
+    }
+
+    // --- INITIALIZATION (ЗАПУСК С ЗАЩИТОЙ) ---
+    async function startApp() {
+      setupPalette();
+    
+      // Навешиваем обработчики меню
+      navButtons.forEach(btn => btn.onclick = () => loadSection(btn.dataset.section, btn));
+
+      // 1. Экран подключения
+      content.innerHTML = `
+          <div class="card" style="text-align:center; padding: 40px 20px;">
+              <div style="font-size:40px; margin-bottom:20px;">📡</div>
+              <h3>Подключение</h3>
+              <p id="conn-log" style="color:var(--muted); font-size:12px; margin-top:10px;">
+                  Связываемся с сервером...
+              </p>
+          </div>
+      `;
+
+      // 2. ЦИКЛ ПРОВЕРКИ СЕРВЕРА (Максимум 20 попыток по 2 секунды)
+      let serverReady = false;
+      const maxRetries = 20;
+    
+      for(let i = 1; i <= maxRetries; i++) {
+          // Обновляем статус на экране
+          const statusEl = document.getElementById('conn-log');
+          if(statusEl) statusEl.innerText = `Попытка ${i}/${maxRetries}...`;
+        
+          // Проверяем здоровье (функция из api.js)
+          const isHealthy = await window.checkBackendHealth();
+        
+          if(isHealthy) {
+              serverReady = true;
+              break; 
+          }
+        
+          // Ждем 2 секунды перед следующей попыткой
+          await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Если сервер так и не ответил
+      if(!serverReady) {
+          content.innerHTML = `
+              <div class="card" style="text-align:center;">
+                  <h3 style="color:#ff7675">Сервер недоступен</h3>
+                  <p>Не удалось подключиться. Возможно, сервер "спит" или обновляется.</p>
+                  <button class="btn" onclick="location.reload()" style="margin-top:20px;">
+                      Попробовать снова
+                  </button>
+              </div>`;
+          return;
+      }
+
+      // 3. АВТОРИЗАЦИЯ (Только если сервер жив)
+      let isAuthenticated = false;
+    
+      // Если есть данные от Телеграма, пробуем залогиниться
+      if (tg && tg.initData) {
+        try {
+          const res = await window.apiPost('/api/auth/tg-login', { initData: tg.initData });
+          if (res && res.access_token) {
+            window.setToken(res.access_token);
+            isAuthenticated = true;
+          }
+        } catch(e) {
+           console.warn("Auth check failed:", e);
+        }
+      }
+    
+      // Проверка сохраненного токена, если новый логин не прошел
+      if (!isAuthenticated && window.getToken()) {
+          isAuthenticated = true; 
+      }
+
+      // 4. Если не авторизовались
+      if (!isAuthenticated) {
+          content.innerHTML = `
+              <div class="card" style="text-align:center; padding:30px;">
+                  <h3>Вход не выполнен 🔐</h3>
+                <p>Сессия истекла. Пожалуйста, перезапустите бота.</p>
+                  <button class="btn" onclick="location.reload()">Перезагрузить</button>
+              </div>`;
+          return; 
+      }
+
+      // 5. УСПЕШНЫЙ ЗАПУСК
+      const startBtn = document.querySelector('[data-section=wardrobe]');
+      if (startBtn) {
+          loadSection('wardrobe', startBtn);
+          // Небольшая задержка для корректного расчета позиции волны
+          setTimeout(() => moveWave(startBtn), 150);
       }
     }
-    
-    // Проверка сохраненного токена, если новый логин не прошел
-    if (!isAuthenticated && window.getToken()) {
-        isAuthenticated = true; 
-    }
 
-    // 4. Если не авторизовались
-    if (!isAuthenticated) {
-        content.innerHTML = `
-            <div class="card" style="text-align:center; padding:30px;">
-                <h3>Вход не выполнен 🔐</h3>
-                <p>Сессия истекла. Пожалуйста, перезапустите бота.</p>
-                <button class="btn" onclick="location.reload()">Перезагрузить</button>
-            </div>`;
-        return; 
-    }
-
-    // 5. УСПЕШНЫЙ ЗАПУСК
-    const startBtn = document.querySelector('[data-section=wardrobe]');
-    if (startBtn) {
-        loadSection('wardrobe', startBtn);
-        // Небольшая задержка для корректного расчета позиции волны
-        setTimeout(() => moveWave(startBtn), 150);
-    }
-  }
-
-  // Запуск приложения
-  startApp();
+    // Запуск приложения
+    startApp();
 })();
+
 
