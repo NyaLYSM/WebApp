@@ -473,35 +473,6 @@
     }
   };
 
-    // Добавление: Маркетплейс
-    window.handleAddMarket = async () => {
-      const url = document.getElementById("market-url").value;
-      const name = document.getElementById("market-name").value;
-    
-      if (!url) return alert("Пожалуйста, введите ссылку.");
-
-      setBtnLoading("#populate-form .btn", true);
-
-      try {
-        const res = await window.apiPost('/api/wardrobe/add-marketplace', { 
-            url: url, 
-            name: name || "" 
-        });
-      
-        if (res) {
-            alert("Вещь успешно добавлена!");
-            // Переход в гардероб
-            document.querySelector('[data-section=wardrobe]').click();
-        } else {
-            throw new Error("Пустой ответ от сервера");
-        }
-      } catch (e) { 
-          alert("Ошибка при добавлении: " + e.message); 
-      } finally { 
-          setBtnLoading("#populate-form .btn", false); 
-      }
-    };
-
     // Добавление: Ручное (Файл или URL)
     window.handleAddManual = async () => {
       const name = document.getElementById("manual-name").value;
@@ -650,5 +621,6 @@
     // Запуск приложения
     startApp();
 })();
+
 
 
