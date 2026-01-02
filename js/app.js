@@ -210,131 +210,108 @@
  * @param {Object} data - {temp_id, suggested_name, variants: {original, smart_crop, tight_crop, enhanced}}
  */
   function showVariantSelector(data) {
-    const { temp_id, suggested_name, variants } = data;
+  const { temp_id, suggested_name, variants, total_images } = data;
   
-    // Названия и описания вариантов
-    const variantInfo = {
-      original: {
-         title: "🎯 Оригинал",
-        desc: "Центральный кроп изображения"
-      },
-      smart_crop: {
-        title: "🧠 Умный кроп",
-        desc: "Фокус на главном объекте"
-      },
-      tight_crop: {
-        title: "✂️ Плотный кроп",
-        desc: "Максимально близко к одежде"
-      },
-      enhanced: {
-        title: "✨ Улучшенный",
-        desc: "С повышением качества"
-      }
-    };
-
-    // Создаём HTML для селектора
-    const variantCards = Object.entries(variants).map(([key, imageUrl]) => {
-      const info = variantInfo[key] || { title: key, desc: "" };
-      return `
-        <div class="variant-card" data-variant="${key}">
-          <div class="variant-image">
-            <img src="${window.BACKEND_URL}${imageUrl}" alt="${info.title}" loading="lazy">
-            <div class="variant-check">✓</div>
-          </div>
-          <div class="variant-info">
-            <div class="variant-title">${info.title}</div>
-            <div class="variant-desc">${info.desc}</div>
-          </div>
+  // Создаём HTML для всех фотографий
+  const variantCards = Object.entries(variants).map(([key, imageUrl], index) => {
+    return `
+      <div class="variant-card" data-variant="${key}">
+        <div class="variant-image">
+          <img src="${window.BACKEND_URL}${imageUrl}" alt="Фото ${index + 1}" loading="lazy">
+          <div class="variant-check">✓</div>
         </div>
-      `;
-    }).join('');
-
-    content.innerHTML = `
-      <div class="variant-selector-container">
-        <div class="variant-header">
-          <h2>Выберите лучший вариант</h2>
-          <p class="variant-subtitle">Мы подготовили 4 варианта обработки изображения</p>
-        </div>
-
-        <div class="variant-name-input">
-          <label>Название:</label>
-          <input 
-            type="text" 
-            id="variant-name" 
-            class="input" 
-            value="${suggested_name || ''}" 
-            placeholder="Введите название..."
-            maxlength="100"
-          >
-        </div>
-
-        <div class="variant-grid">
-          ${variantCards}
-        </div>
-
-        <div class="variant-actions">
-          <button class="btn btn-secondary" onclick="window.cancelVariantSelection()">
-            Отмена
-          </button>
-          <button class="btn btn-primary" id="save-variant-btn">
-            Сохранить
-          </button>
+        <div class="variant-info">
+          <div class="variant-title">Фото ${index + 1}</div>
         </div>
       </div>
     `;
+  }).join('');
 
-    // Логика выбора варианта
-    let selectedVariant = 'original'; // По умолчанию первый
+  content.innerHTML = `
+    <div class="variant-selector-container">
+      <div class="variant-header">
+        <h2>Выберите лучшее фото</h2>
+        <p class="variant-subtitle">Найдено ${total_images} ${total_images === 1 ? 'изображение' : 'изображений'} товара</p>
+      </div>
+
+      <div class="variant-name-input">
+        <label>Название:</label>
+        <input 
+          type="text" 
+          id="variant-name" 
+          class="input" 
+          value="${suggested_name || ''}" 
+          placeholder="Введите название..."
+          maxlength="100"
+        >
+        <p style="font-size: 11px; color: var(--muted); margin-top: 6px;">
+          💡 Автоматически извлечено из карточки товара
+        </p>
+      </div>
+
+      <div class="variant-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+        ${variantCards}
+      </div>
+
+      <div class="variant-actions">
+        <button class="btn btn-secondary" onclick="window.cancelVariantSelection()">
+          Отмена
+        </button>
+        <button class="btn btn-primary" id="save-variant-btn">
+          Сохранить выбранное
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Логика выбора варианта
+  let selectedVariant = Object.keys(variants)[0]; // Первое фото по умолчанию
   
-    const variantCards_nodes = document.querySelectorAll('.variant-card');
-    variantCards_nodes.forEach(card => {
-      card.addEventListener('click', () => {
-        // Убираем активный класс со всех
-        variantCards_nodes.forEach(c => c.classList.remove('active'));
-        // Добавляем текущему
-        card.classList.add('active');
-        selectedVariant = card.dataset.variant;
-      });
+  const variantCards_nodes = document.querySelectorAll('.variant-card');
+  variantCards_nodes.forEach(card => {
+    card.addEventListener('click', () => {
+      variantCards_nodes.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      selectedVariant = card.dataset.variant;
     });
+  });
 
-    // Устанавливаем первый вариант активным
-    if (variantCards_nodes.length > 0) {
-      variantCards_nodes[0].classList.add('active');
+  // Первое фото активно по умолчанию
+  if (variantCards_nodes.length > 0) {
+    variantCards_nodes[0].classList.add('active');
+  }
+
+  // Обработчик сохранения
+  document.getElementById('save-variant-btn').onclick = async () => {
+    const nameInput = document.getElementById('variant-name');
+    const finalName = nameInput.value.trim();
+
+    if (!finalName) {
+      alert("Введите название вещи");
+      nameInput.focus();
+      return;
     }
 
-    // Обработчик сохранения
-    document.getElementById('save-variant-btn').onclick = async () => {
-      const nameInput = document.getElementById('variant-name');
-      const finalName = nameInput.value.trim();
+    const btn = document.getElementById('save-variant-btn');
+    btn.disabled = true;
+    btn.innerText = "⏳ Сохранение...";
 
-      if (!finalName) {
-        alert("Введите название вещи");
-        nameInput.focus();
-        return;
-      }
-
-      // Блокируем кнопку
-      const btn = document.getElementById('save-variant-btn');
-      btn.disabled = true;
-      btn.innerText = "⏳ Сохранение...";
-
-      try {
-        const result = await window.apiSelectVariant(temp_id, selectedVariant, finalName);
+    try {
+      const result = await window.apiSelectVariant(temp_id, selectedVariant, finalName);
       
-        if (result) {
-          alert("✅ Вещь успешно добавлена!");
-          // Переходим в гардероб
-          document.querySelector('[data-section=wardrobe]').click();
-        } else {
-          throw new Error("Пустой ответ от сервера");
-        }
-      } catch (e) {
-        alert("❌ Ошибка при сохранении: " + e.message);
-        btn.disabled = false;
-        btn.innerText = "Сохранить";
+      if (result) {
+        alert("✅ Вещь успешно добавлена!");
+        document.querySelector('[data-section=wardrobe]').click();
+      } else {
+        throw new Error("Пустой ответ от сервера");
       }
-    };
-  }
+    } catch (e) {
+      alert("❌ Ошибка при сохранении: " + e.message);
+      btn.disabled = false;
+      btn.innerText = "Сохранить выбранное";
+    }
+  };
+}
 
   // Функция отмены выбора
   window.cancelVariantSelection = () => {
@@ -621,6 +598,7 @@
     // Запуск приложения
     startApp();
 })();
+
 
 
 
