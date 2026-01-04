@@ -127,7 +127,7 @@
         method: "POST",
         headers: getHeaders(true),
         body: JSON.stringify({ url, name })
-      }, 60000); // 60 секунд на обработку
+      }, 90000); // 60 секунд на обработку
       return await res.json();
     } catch (e) {
       if(e.message === "UNAUTHORIZED") return null;
@@ -153,4 +153,5 @@
   };
   
 })();
+
 
