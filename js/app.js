@@ -171,7 +171,7 @@
         <div class="wardrobe-grid">
           ${items.map(item => `
             <div class="wardrobe-item">
-              <img src="${window.BACKEND_URL}${item.image_url}" alt="${item.name}" loading="lazy">
+              <img src="${window.resolveUrl(item.image_url)}" alt="${item.name}" loading="lazy">
               <div class="item-footer">
                 <div class="item-name">${item.name}</div>
                 <button class="delete-icon" onclick="window.appDelete('${item.id}')">✕</button>
@@ -217,7 +217,7 @@
     return `
       <div class="variant-card" data-variant="${key}">
         <div class="variant-image">
-          <img src="${window.BACKEND_URL}${imageUrl}" alt="Фото ${index + 1}" loading="lazy">
+          <img src="${window.resolveUrl(imageUrl)}" alt="Фото ${index + 1}" loading="lazy">
           <div class="variant-check">✓</div>
         </div>
         <div class="variant-info">
@@ -598,7 +598,3 @@
     // Запуск приложения
     startApp();
 })();
-
-
-
-
