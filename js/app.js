@@ -1,6 +1,7 @@
 // js/app.js — FULL VERSION (UI + STABILITY FIXES)
 
 (function() {
+  window.resolveUrl = (url) => (!url || url.startsWith('http')) ? url : (window.BACKEND_URL || '') + url;
   // 1. Инициализация Telegram WebApp
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   
